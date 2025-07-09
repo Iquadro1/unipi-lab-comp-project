@@ -1,0 +1,87 @@
+%% Creator: Inkscape 1.4.2 (ebf0e940d0, 2025-05-08), www.inkscape.org
+%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
+%% Accompanies image file 'drawing.svg.2025_07_03_18_46_15.0.pdf' (pdf, eps, ps)
+%%
+%% To include the image in your LaTeX document, write
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics{<filename>.pdf}
+%% To scale the image, write
+%%   \def\svgwidth{<desired width>}
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics[width=<desired width>]{<filename>.pdf}
+%%
+%% Images with a different path to the parent latex file can
+%% be accessed with the `import' package (which may need to be
+%% installed) using
+%%   \usepackage{import}
+%% in the preamble, and then including the image with
+%%   \import{<path to file>}{<filename>.pdf_tex}
+%% Alternatively, one can specify
+%%   \graphicspath{{<path to file>/}}
+%% 
+%% For more information, please see info/svg-inkscape on CTAN:
+%%   http://tug.ctan.org/tex-archive/info/svg-inkscape
+%%
+\begingroup%
+  \makeatletter%
+  \providecommand\color[2][]{%
+    \errmessage{(Inkscape) Color is used for the text in Inkscape, but the package 'color.sty' is not loaded}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\transparent[1]{%
+    \errmessage{(Inkscape) Transparency is used (non-zero) for the text in Inkscape, but the package 'transparent.sty' is not loaded}%
+    \renewcommand\transparent[1]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \newcommand*\fsize{\dimexpr\f@size pt\relax}%
+  \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
+  \ifx\svgwidth\undefined%
+    \setlength{\unitlength}{353.05222879bp}%
+    \ifx\svgscale\undefined%
+      \relax%
+    \else%
+      \setlength{\unitlength}{\unitlength * \real{\svgscale}}%
+    \fi%
+  \else%
+    \setlength{\unitlength}{\svgwidth}%
+  \fi%
+  \global\let\svgwidth\undefined%
+  \global\let\svgscale\undefined%
+  \makeatother%
+  \begin{picture}(1,0.26554002)%
+    \lineheight{1}%
+    \setlength\tabcolsep{0pt}%
+    \put(0.20679053,0.14592485){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$\xhookrightarrow{\quad g_{0,1} \quad}$\end{tabular}}}}%
+    \put(0.48803246,0.14592485){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$\xhookrightarrow{\quad g_{1,2} \quad}$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{drawing.svg.2025_07_03_18_46_15.0.pdf}}%
+    \put(0.54828932,0.25671527){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$a$\end{tabular}}}}%
+    \put(0.68495896,0.19757433){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$b$\end{tabular}}}}%
+    \put(0.56680854,0.07057349){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$c$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=2]{drawing.svg.2025_07_03_18_46_15.0.pdf}}%
+    \put(0.69992409,0.02826391){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$d$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=3]{drawing.svg.2025_07_03_18_46_15.0.pdf}}%
+    \put(0.83850171,0.25671527){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$a$\end{tabular}}}}%
+    \put(0.9751711,0.19757433){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$b$\end{tabular}}}}%
+    \put(0.85702068,0.07057349){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$c$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=4]{drawing.svg.2025_07_03_18_46_15.0.pdf}}%
+    \put(0.99013623,0.02826391){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$d$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=5]{drawing.svg.2025_07_03_18_46_15.0.pdf}}%
+    \put(0.76927513,0.14592485){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$\xhookrightarrow{\quad g_{2,3} \quad}$\end{tabular}}}}%
+    \put(0.00973927,0.25693206){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$a$\end{tabular}}}}%
+    \put(0.1464092,0.1977911){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$b$\end{tabular}}}}%
+    \put(0.02825833,0.07079026){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$c$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{drawing.svg.2025_07_03_18_46_15.0.pdf}}%
+    \put(0.09363613,0.003251){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$F_0K$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=7]{drawing.svg.2025_07_03_18_46_15.0.pdf}}%
+    \put(0.27601712,0.25671737){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$a$\end{tabular}}}}%
+    \put(0.41268749,0.19757643){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$b$\end{tabular}}}}%
+    \put(0.29453608,0.07057559){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$c$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=8]{drawing.svg.2025_07_03_18_46_15.0.pdf}}%
+    \put(0.42765115,0.02826601){\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$d$\end{tabular}}}}%
+    \put(0.36213208,0.003251){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$F_1K$\end{tabular}}}}%
+    \put(0.63517617,0.003251){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$F_2K$\end{tabular}}}}%
+    \put(0.92886646,0.00267201){\color[rgb]{0,0,0}\makebox(0,0)[t]{\lineheight{1.25}\smash{\begin{tabular}[t]{c}$F_3K = K$\end{tabular}}}}%
+  \end{picture}%
+\endgroup%

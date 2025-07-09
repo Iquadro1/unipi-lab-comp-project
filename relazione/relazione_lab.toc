@@ -1,0 +1,11 @@
+\babel@toc {italian}{}\relax 
+\babel@toc {italian}{}\relax 
+\contentsline {section}{\numberline {1}Introduzione}{1}{section.1}%
+\contentsline {section}{\numberline {2}Basi di Topologia Algebrica}{1}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Complessi Simpliciali}{1}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Omologia}{2}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Mappe indotte su gruppi di omologia}{3}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Omologia Persistente e Algoritmo di Calcolo}{4}{section.3}%
+\contentsline {section}{\numberline {4}Complessi Simpliciali}{5}{section.4}%
+\contentsline {section}{\numberline {5}Sperimentazione e Confronto}{5}{section.5}%
+\contentsline {section}{\numberline {6}Conclusioni}{5}{section.6}%

@@ -1,0 +1,341 @@
+\documentclass[a4paper]{article}
+
+\usepackage[italian]{babel}
+
+\usepackage[top=1in, bottom=1.3in, left=1.2in, right=1.3in]{geometry}
+
+\pagestyle{plain}
+
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{amsthm}
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage{faktor}
+\usepackage{tikz-cd}
+% \setlist{nosep}
+
+
+\newtheorem{theorem}{Teorema}[section]
+\newtheorem{corollary}{Corollario}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposizione}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definizione}[section]
+\newtheorem{example}{Esempio}[section]
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Osservazione}
+
+\begin{document}
+\vspace*{3.5cm}
+%\fancyhead[C]{}
+\hrule \medskip \vspace{2pt} % Upper rule
+\begin{center}
+\noindent \begin{minipage}{0.2\textwidth}
+\centering
+%\footnotesize
+Isabella Inuso \hfill\\
+561434\hfill\\
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+    \centering
+    \textsc{\footnotesize Relazione di Laboratorio Computazionale} \hfill\\
+    \LARGE
+    Confronto tra Complessi Simpliciali
+\end{minipage}
+\begin{minipage}{0.2\textwidth}
+ \centering
+ Anno Accademico\\
+ 2024/25\hfill\\
+\end{minipage}
+\end{center}
+\bigskip \hrule
+\hrule \medskip \vspace{6pt}
+% \centering
+% \begin{minipage}{0.6\textwidth}
+%     \centering
+%     \textsc{\large Relazione di Calcolo Scientifico} \hfill\\
+%     \LARGE
+%     Estrazione Accurata di Valori Singolari
+% \end{minipage}
+% \bigskip \hrule
+\bigskip
+
+\newpage
+\tableofcontents
+
+\newpage
+
+\hypersetup{pageanchor=true} % to start numbering after title and ToC pages
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\section{Introduzione}
+L'analisi topologica dei dati è un campo in rapida crescita che si occupa di studiare le proprietà topologiche dei dati attraverso strumenti matematici. In questo contesto, i complessi simpliciali sono strutture fondamentali che permettono di rappresentare e analizzare la forma dei dati in modo efficace. Questa relazione si propone di confrontare diversi tipi di complessi simpliciali, come i complessi di Vietoris-Rips, i complessi di Čech, i complessi alpha e i complessi witness, comparando le omologie persistenti ottenute a partire dagli stessi dati passando attraverso i vari complessi.
+
+\section{Basi di Topologia Algebrica}
+Cominciamo con una breve introduzione ai concetti fondamentali della topologia algebrica che ci serviranno per comprendere l'omologia persistente.
+
+\subsection{Complessi Simpliciali}
+\begin{definition}
+    Sia $V$ un insieme finito non vuoto. Un \textbf{complesso simpliciale astratto} su $V$ è una collezione $K$ di sottoinsiemi di $V$ tale che:
+    \begin{itemize}
+        \item per ogni $v \in V$, $\{v\} \in K$;
+        \item Se $\sigma \in K$ e $\tau \subseteq \sigma$, allora $\tau \in K$.
+    \end{itemize}
+\end{definition}
+Gli elementi di $V$ sono detti \textbf{vertici} del complesso simpliciale $K$, mentre gli elementi di $K$ sono detti \textbf{simplessi} di $K$. Ogni simplesso $\tau \subset \sigma$ è detta \textbf{faccia} di $\sigma$.
+
+Sia $\sigma \in K$ un simplesso. Se $|\sigma| = k + 1$, allora diciamo che $\sigma$ ha \textbf{dimensione} $k$ e lo chiamiamo \textbf{$k$-simplesso}. Denotiamo con $K_k$ l'insieme di tutti i $k$-simplessi di $K$. La \textbf{dimensione} del complesso simpliciale $K$ è definita come la massima dimensione dei suoi simplessi. Il \textbf{$k$-scheletro} di $K$ è il sottocomplesso formato da tutti i simplessi di dimensione minore o uguale a $k$, ovvero l'unione dei $K_p$ per $p = 0 ,\dots, k$.
+
+Sia $K$ un complesso simpliciale astratto.
+\begin{definition}
+    $L \subseteq K$ è un \textbf{sottocomplesso} di $K$ se, per ogni $\sigma \in L$, ogni faccia di $\sigma$ in $K$ appartiene a $L$.
+\end{definition}
+
+\begin{definition}
+    Una \textbf{filtrazione} di $K$ (di lunghezza n) è una famiglia di sottocomplessi $\{\mathbf{F}_iK\}_{i \in I}$, dove $I = \{0,1,\ldots,n\}$ è un insieme finito di indici, tale che:
+    \begin{itemize}
+        \item $\mathbf{F}_iK \subseteq \mathbf{F}_jK$ se $i \leq j$;
+        \item $\displaystyle \bigcup_{i \in I} \mathbf{F}_iK = K$.
+    \end{itemize}
+\end{definition}
+
+\`E possibile associare a un complesso simpliciale astratto una realizzazione geometrica, cioè un sottoinsieme di $\mathbb{R}^n$, per un certo $n$, composto da punti che rappresentano i vertici del complesso e poliedri, con vertici questi punti, che rappresentano i simplessi. 
+
+TODO: esempio complesso simpliciale e realizzazione geometrica.
+
+\begin{definition}
+    Dati $K$ e $L$ due complessi simpliciali, una \textbf{mappa simpliciale} $f : K \rightarrow L$ è una mappa che manda vertici in vertici tale che per ogni simplesso $\sigma = \{v_1, \dots, v_n\}$ in $K$, $f(\sigma) = \{f(v_1), \dots, f(v_n)\}$ è un simplesso di $L$.
+
+    Chiamiamo $f$ un \textbf{isomorfismo} se esiste un'inversa $g: L \rightarrow K$ tale che $f \circ g = \text{id}_L$ e $g \circ f = \text{id}_K$.
+\end{definition}
+
+Possiamo definire un' \textbf{orientazione} su $K$ come una funzione $o : K_0 \to \mathbb{N}$, che associa un ordine ai vertici del complesso simpliciale. Questo ci permette di scrivere i simplessi come tuple ordinate, cioè come $(v_0, \ldots, v_k)$, dove $v_i$ sono i vertici del simplesso e $o(v_i) < o(v_j)$ se $i < j$. %Chiamiamo questi simplessi \textbf{orientati}.
+
+Dato un simplesso $\sigma = (v_0, \ldots, v_k)$, possiamo quindi definire la \textbf{faccia $i$-esima} di $\sigma$ come il \mbox{$(k-1)$-simplesso} ottenuto rimuovendo il vertice $v_i$, cioè $\sigma_{-i} = (v_0, \ldots, v_{i-1}, v_{i+1}, \ldots, v_k)$.
+% \begin{definition}
+%     Dato $\sigma = (v_0, \ldots, v_k)$ $k$-simplesso, chiamiamo \textbf{bordo} di $\sigma$ la:
+%     \begin{equation*}
+%         \partial \sigma = \left\{ (v_0, \ldots, v_{i-1}, v_{i+1}, \ldots, v_k) : 0 \leq i \leq k \right\}.
+%     \end{equation*}
+% \end{definition}
+
+\subsection{Omologia}
+Sia $K$ un complesso simpliciale orientato, e sia $\mathbb{F}$ un campo. 
+\begin{definition}
+    Sia $k \geq 0$. Il $k$-esimo \textbf{gruppo delle catene} di $K$ su $\mathbb{F}$ è lo spazio vettoriale $\mathcal{C}_k(K, \mathbb{F})$ su $\mathbb{F}$ che ha come base i $k$-simplessi di $K$.
+
+    Chiamiamo $\gamma \in \mathcal{C}_k(K, \mathbb{F})$ una \textbf{$k$-catena} di $K$, e possiamo scriverla come
+    \begin{align*}
+        \gamma = \sum_{\sigma \in K_k} \gamma_\sigma \sigma ,\quad \text{con } \gamma_\sigma \in \mathbb{F}.
+    \end{align*}
+\end{definition}
+
+\begin{definition}
+    Dato $k \geq 0$, definiamo il $k$-esimo \textbf{operatore di bordo} di $K$ come la mappa $\mathbb{F}$-lineare $\partial_k : \mathcal{C}_k(K, \mathbb{F}) \to \mathcal{C}_{k-1}(K, \mathbb{F})$ per cui, per ogni $\sigma$ nella base di $\mathcal{C}_k(K, \mathbb{F})$, vale che
+    \begin{align*}
+        \partial_k(\sigma) = \sum_{i=0}^k (-1)^i \sigma_{-i},
+    \end{align*}
+    dove assumiamo che $\mathcal{C}_{-1}(K, \mathbb{F}) = \{0\}$.
+\end{definition}
+
+TODO: esempio di bordo di un $k$-simplesso.
+
+\begin{proposition}
+    Per ogni $k \geq 0$, vale che $\partial_k \circ \partial_{k+1} = 0$.
+\end{proposition}
+\begin{proof}
+    Consideriamo il caso $k = 1$. Sia $\sigma = (v_0, v_1, v_2)$ un $2$-simplesso. Allora
+    \begin{align*}
+        \partial_1(\partial_2(\sigma)) &= \partial_2\left( \sigma_{-0} - \sigma_{-1} + \sigma_{-2} \right)\\
+        &= \partial_1\left( (v_0, v_1) + (v_0, v_2) + (v_1, v_2) \right) \\
+        &= \partial_1((v_0, v_1)) + \partial_2((v_0, v_2)) + \partial_2((v_1, v_2)) \\
+        &= (v_1) - (v_0) + (v_2) - (v_0) + (v_2) - (v_1) = 0.
+    \end{align*}
+    Per linearità di $\partial_k$, abbiamo che $\partial_2 \circ \partial_1 = 0$ per ogni $\gamma \in \mathcal{C}_2(K,\mathbb{F})$.
+
+    TODO: dimostrazione generale
+\end{proof}
+Ottrniamo quindi una successione di spazi vettoriali della forma:
+\begin{align*}
+    \cdots \xrightarrow[\rule{20pt}{0pt}]{\partial_{k+1}} \mathcal{C}_k(K, \mathbb{F}) \xrightarrow[\rule{20pt}{0pt}]{\partial_k} \mathcal{C}_{k-1}(K, \mathbb{F}) \xrightarrow[\rule{20pt}{0pt}]{\partial_{k-1}} \cdots \xrightarrow[\rule{20pt}{0pt}]{\partial_1} \mathcal{C}_0(K, \mathbb{F}) \xrightarrow[\rule{20pt}{0pt}]{\partial_0} 0.
+\end{align*}
+% Chiamiamo la collezione $(\mathcal{C}_k(K,\mathbb{F}), \partial_k)_{k \geq 0}$ un \textbf{complesso di catene simpliciale} su $\mathbb{F}$, al quale ci riferiremo semplicemente come complesso di catene.
+Diamo ora la definizione di \textit{gruppo di omologia simpliciale}, al quale ci riferiremo semplicemente come gruppo di omologia, in quanto la definizione generale non ci interesserà in questa relazione.
+\begin{definition}
+    Per ogni $k \geq 0$, definiamo il $k$-esimo \textbf{gruppo di omologia} di $K$ su $\mathbb{F}$ come il quoziente:
+    \begin{align*}
+        H_k(K, \mathbb{F}) = \faktor{\text{Ker}(\partial_k)}{\text{Im}(\partial_{k+1})}
+    \end{align*}
+    Chiamiamo \textbf{$k$-cicli} gli elementi di $\text{Ker}(\partial_k)$, e \textbf{$k$-bordi} gli elementi di $\text{Im}(\partial_{k+1})$.
+\end{definition}
+
+In seguito, per brevità, indicheremo con $H_k(K)$ il gruppo di omologia $H_k(K, \mathbb{F})$ quando il campo $\mathbb{F}$ non è specificato.
+
+Dato che $K$ è finito, i gruppi di omologia $H_k(K)$ hanno dimensione finita, e, per ogni $k \geq 0$, possiamo definire il $k$-esimo \textbf{numero di Betti} come $\beta_k (K) = \dim H_k(K)$
+
+\begin{remark}
+    I numeri di Betti caratterizzano completamente la struttura algebrica dei gruppi di omologia su un campo, in quanto $H_k(K, \mathbb{F})$ è isomorfo a $\mathbb{F}^{\beta_k}$. Tuttavia, non forniscono basi dei gruppi di omologia come spazi vettoriali.
+\end{remark}
+
+TODO: esempio gruppi di omologia.
+
+% \begin{definition}
+%     Chiamiamo \textbf{k-simplesso standard} l'insieme definito come:
+%     \begin{equation*}
+%         \Delta^k = \left\{ (x_0, x_1, \ldots, x_k) \in [0,\infty)^{k+1} : \sum_{i=0}^k x_i = 1 \right\}.
+%     \end{equation*}
+% \end{definition}
+
+\subsection{Mappe indotte su gruppi di omologia}
+Dati $K$, $K'$ due complessi simpliciali e $f : K \to L$ una mappa simpliciale, questa induce, per ogni $k \geq 0$, una mappa $\mathbb{F}_2$-lineare $\mathcal{C}_k(f): \mathcal{C}_k(K) \to \mathcal{C}_k(L)$, definita sui $\sigma$ nella base di $\mathcal{C}_k(K)$ come:
+\begin{align*}
+    \mathcal{C}_k(f)(\sigma) =
+    \begin{cases}
+        f(\sigma) & \text{se } \dim f(\sigma) = k,\\
+        0 & \text{altrimenti.}
+    \end{cases}
+\end{align*}
+
+Queste mappe si comportano bene rispetto agli operatori di bordo, come mostrato nella seguente proposizione. In particolare, le mappe indotte da $f$ sui gruppi delle catene commutano con gli operatori di bordo, formando così un diagramma commutativo. Questa proprietà fondamentale costituisce la base per la definizione delle mappe indotte sui gruppi di omologia.
+
+
+\begin{proposition} \label{prop:bordo-mappa}
+    Sia $f : K \to L$ una mappa simpliciale tra complessi simpliciali. Allora, per ogni $k \geq 0$ e $\sigma \in K_k$, vale che:
+    \begin{align*}
+        \mathcal{C}_{k-1}(f) \circ \partial_k^K (\sigma) = \partial_k^L \circ \mathcal{C}_k(f)(\sigma),
+    \end{align*}
+    dove $\partial_k^K$ e $\partial_k^L$ sono gli operatori di bordo di $K$ e $L$, rispettivamente.
+\end{proposition}
+
+\begin{proof}
+    Sia $\sigma$ un $k$-simplesso di $K$. Imponiamo delle orientazioni $o_K$, $o_L$ su $K$, e $L$ tali che $f$ preservi l'orientazione, cioè, se $o_K(v) < o_K(v')$, allora $o_L(f(v)) \le o_L(f(v'))$. Scriviamo $\sigma = (v_0,\dots,v_k)$ come simplesso orientato secondo $o_K$, quindi abbiamo due casi da considerare:
+    \begin{itemize}
+        \item Se $\dim f(\sigma) = k$, allora $f(\sigma)$ è un $k$-simplesso di $L$, e $\mathcal{C}_k(f)(\sigma) = f(\sigma)$. Pertanto, abbiamo che
+        \begin{align*}
+            \mathcal{C}_{k-1}(f) \circ \partial_k^K (\sigma) &= \mathcal{C}_{k-1}(f)\left( \sum_{i=0}^{k-1} (-1)^i \sigma_{-i} \right)\\
+            &= \sum_{i=0}^{k-1} (-1)^i f(\sigma_{-i}) = \partial_k^L(f(\sigma)) = \partial_k^L \circ \mathcal{C}_k(f)(\sigma),
+        \end{align*}
+        dove il secondo passaggio segue dalla linearità di $\mathcal{C}_{k-1}(f)$ e dal fatto che se $\dim f(\sigma) = k$, allora $\dim f(\sigma_{-i}) = k-1$ per ogni $i$.
+        \item Se $\dim f(\sigma) < k$, allora $\mathcal{C}_k(f)(\sigma) = 0$, e quindi anche $\partial_k^L (\mathcal{C}_k(f)(\sigma)) = 0$. Basta quindi verificare che $\mathcal{C}_{k-1}(f) \circ \partial_k^K(\sigma) = 0$. Dato che $f$ preserva l'orientazione, deve valere che $f(v_p) = f(v_{p+1})$ per qualche $p \in \{0, \ldots, k-1\}$, perciò $\dim f(\sigma_{-i}) < k-1$ per ogni $i \ne p, p+1$. Di conseguenza,
+        \begin{align*}
+            \mathcal{C}_{k-1}(f) \circ \partial_k^K (\sigma) &= \mathcal{C}_{k-1}(f)\left( \sum_{i=0}^{k-1} (-1)^i \sigma_{-i} \right)\\
+            &= \sum_{i=0}^{k-1} (-1)^i \mathcal{C}_{k-1}(f)(\sigma_{-i})\\
+            &= (-1)^p (f(\sigma_{-p}) - f(\sigma_{-(p+1)})) = 0,
+        \end{align*}
+        dove l'ultima uguaglianza segue dal fatto che $f(\sigma_{-p}) = (f(v_0),\dots,f(v_p),f(v_{p+2}),\dots,f(v_k)) =f(\sigma_{-(p+1)})$.
+    \end{itemize}
+\end{proof}
+
+\begin{remark}
+    Data $f: K \to L$ una mappa simpliciale, la Proposizione \ref{prop:bordo-mappa} ha come conseguenza che il seguente diagramma commuta: 
+
+    % https://q.uiver.app/#q=WzAsMTIsWzEsMCwiXFxtYXRoY2Fse0N9X2soSykiXSxbMiwwLCJcXG1hdGhjYWx7Q31fe2stMX0oSykiXSxbMSwxLCJcXG1hdGhjYWx7Q31fayhMKSJdLFsyLDEsIlxcbWF0aGNhbHtDfV97ay0xfShMKSJdLFszLDAsIlxcZG90cyJdLFs0LDAsIlxcbWF0aGNhbHtDfV8wKEspIl0sWzAsMCwiXFxkb3RzIl0sWzAsMSwiXFxkb3RzIl0sWzMsMSwiXFxkb3RzIl0sWzQsMSwiXFxtYXRoY2Fse0N9XzAoTCkiXSxbNSwwLCIwIl0sWzUsMSwiMCJdLFswLDEsIlxccGFydGlhbF9rXksiXSxbMCwyLCJcXG1hdGhjYWx7Q31fe2t9KGYpIl0sWzIsMywiXFxwYXJ0aWFsX2teTCIsMl0sWzEsMywiXFxtYXRoY2Fse0N9X3trLTF9KGYpIl0sWzEsNCwiXFxwYXJ0aWFsX3trLTF9XksiXSxbNiwwLCJcXHBhcnRpYWxfe2srMX1eSyJdLFs3LDIsIlxccGFydGlhbF97aysxfV5MIiwyXSxbMyw4LCJcXHBhcnRpYWxfe2stMX1eSyIsMl0sWzgsOSwiXFxwYXJ0aWFsXzFeTCIsMl0sWzQsNSwiXFxwYXJ0aWFsXzFeSyJdLFs1LDksIlxcbWF0aGNhbHtDfV8wKGYpIl0sWzUsMTAsIjAiXSxbOSwxMSwiMCJdLFsxMCwxMSwiIiwxLHsibGV2ZWwiOjIsInN0eWxlIjp7ImhlYWQiOnsibmFtZSI6Im5vbmUifX19XV0=
+\[\begin{tikzcd}
+	\dots & {\mathcal{C}_k(K)} & {\mathcal{C}_{k-1}(K)} & \dots & {\mathcal{C}_0(K)} & 0 \\
+	\dots & {\mathcal{C}_k(L)} & {\mathcal{C}_{k-1}(L)} & \dots & {\mathcal{C}_0(L)} & 0
+	\arrow["{\partial_{k+1}^K}", from=1-1, to=1-2]
+	\arrow["{\partial_k^K}", from=1-2, to=1-3]
+	\arrow["{\mathcal{C}_{k}(f)}", from=1-2, to=2-2]
+	\arrow["{\partial_{k-1}^K}", from=1-3, to=1-4]
+	\arrow["{\mathcal{C}_{k-1}(f)}", from=1-3, to=2-3]
+	\arrow["{\partial_1^K}", from=1-4, to=1-5]
+	\arrow["0", from=1-5, to=1-6]
+	\arrow["{\mathcal{C}_0(f)}", from=1-5, to=2-5]
+	\arrow[equals, from=1-6, to=2-6]
+	\arrow["{\partial_{k+1}^L}"', from=2-1, to=2-2]
+	\arrow["{\partial_k^L}"', from=2-2, to=2-3]
+	\arrow["{\partial_{k-1}^K}"', from=2-3, to=2-4]
+	\arrow["{\partial_1^L}"', from=2-4, to=2-5]
+	\arrow["0", from=2-5, to=2-6]
+\end{tikzcd}\]
+
+    Abbiamo inoltre che le mappe $\mathcal{C}_k(f)$ mandano bordi in bordi e cicli in cicli, cioè
+    \begin{align*}
+        \mathcal{C}_k(f)(\text{Ker} (\partial_k^K)) \subseteq \text{Ker} (\partial_k^L) , \quad \mathcal{C}_k(f)(\text{Im}(\partial_{k+1}^K)) \subseteq \text{Im}(\partial_{k+1}^L) 
+    \end{align*}
+    
+\end{remark}
+
+Questo ci permette di dire che la seguente definizione è ben posta:
+\begin{definition}
+    Sia $K$ e $L$ due complessi simpliciali, e sia $f : K \to L$ una mappa simpliciale. Per ogni $k \geq 0$, definiamo la mappa $H_k(f) : H_k(K) \to H_k(L)$ indotta da $f$ sui gruppi di omologia come:
+    \begin{align*}
+        H_k(f)([\gamma]) = [\mathcal{C}_k(f)(\gamma)]    
+    \end{align*}
+    per ogni $[\gamma] \in H_k(K)$, dove $[\gamma]$ denota la classe di equivalenza di $\gamma \in \mathcal{C}_k(K)$ in $H_k(K)$.
+\end{definition}
+
+Una proprietà fondamentale dei complessi simpliciali e delle mappe tra di essi è la funtorialità, cioè:
+\begin{proposition} \label{prop:funtorialita}
+    Sia $K$, $L$, $M$ tre complessi simpliciali, e siano $f : K \to L$ e $g : L \to M$ due mappe simpliciali. Allora, per ogni $k \geq 0$, vale che:
+    \begin{align*}
+        H_k(g \circ f) = H_k(g) \circ H_k(f).
+    \end{align*}
+\end{proposition}
+
+\begin{proof}
+    Sia $\sigma$ un $k$-simplesso di $K$. Per definizione di mappa indotta sui gruppi di omologia, $H_k(g \circ f)[\sigma] = [\mathcal{C}_k(g \circ f)(\sigma)]$. Abbiamo allora due casi:
+    \begin{itemize}
+        \item Se $\dim (g \circ f)(\sigma) = k$, allora anche $\dim f(\sigma) = k$, e quindi
+            \begin{align*}
+                \mathcal{C}_k(g \circ f)(\sigma) = g(f(\sigma)) = g(\mathcal{C}_k(f)(\sigma)) = (\mathcal{C}_k(g) \circ \mathcal{C}_k(f))(\sigma).
+            \end{align*}
+            \item Se $\dim (g \circ f)(\sigma) < k$, allora $\mathcal{C}_k(g \circ f)(\sigma) = 0$. Distinguiamo due sottocasi:
+            \begin{itemize}
+                \item Se $\dim f(\sigma) = k$, allora $\mathcal{C}_k(f)(\sigma) = f(\sigma)$,ma $\dim g(f(\sigma)) < k$, quindi $\mathcal{C}_k(g)(f(\sigma)) = \mathcal{C}_k(g)(\mathcal{C}_k(f)(\sigma)) = 0$.
+                \item Se $\dim f(\sigma) < k$, allora $\mathcal{C}_k(f)(\sigma) = 0$, e quindi $\mathcal{C}_k(g)(\mathcal{C}_k(f)(\sigma)) = \mathcal{C}_k(g)(0) = 0$.
+            \end{itemize}
+    \end{itemize}
+    In entrambi i casi, otteniamo che $H_k(g \circ f)[\sigma] = [\mathcal{C}_k(g \circ f)(\sigma)] = [(\mathcal{C}_k(g) \circ \mathcal{C}_k(f))(\sigma)] = (H_k(g) \circ H_k(f))[\sigma]$, e la tesi segue dal fatto che $\sigma \in \mathcal{C}_k(K)$ è un generico elemento di base.
+\end{proof}
+
+\section{Omologia Persistente e Algoritmo di Calcolo}
+Consideriamo ora un complesso simpliciale $K$ e una filtrazione $\mathbf{F}_0K \subseteq \dots \subseteq \mathbf{F}_nK$ di $K$. Denotiamo con $g_{i,j} : \mathbf{F}_i K \hookrightarrow \mathbf{F}_{j} K$, con $i,j \in \{0,\dots,n\}$ e $i\leq j$, le inclusioni (come mappe simpliciali) tra i sottocomplessi.
+
+Un esempio è la filtrazione seguente:\\
+\begin{center}
+    
+\input{drawing.svg.2025_07_03_18_46_15.0.pdf_tex}
+
+TODO: rimpicciolire/abbellire disegno
+\end{center}
+
+Le inclusioni inducono, per ogni $k \geq 0$, delle mappe lineari $H_k(g_{i,j}) : H_k(\mathbf{F}_iK) \hookrightarrow H_k(\mathbf{F}_{j}K)$.
+Inoltre, dato che $g_{i,j} = g_{i,i+1} \circ g_{i+1,i+2} \circ \cdots \circ g_{j-1,j}$, abbiamo che, per la Proposizione \ref{prop:funtorialita}
+\begin{align} \label{funt-inclusionni}
+    H_k(g_{i,j}) = H_k(g_{i,i+1}) \circ H_k(g_{i+1,i+2}) \circ \cdots \circ H_k(g_{j-1,j}).
+\end{align}
+% Quindi, per un $k$ fissato, otteniamo una successione del tipo:
+% \begin{align*}
+%     H_k(\mathbf{F}_0K) \xrightarrow[\rule{30pt}{0pt}]{H_Kg_0} H_k(\mathbf{F}_1K) \xrightarrow[\rule{30pt}{0pt}]{H_kg_1} \cdots \xrightarrow[\rule{30pt}{0pt}]{H_kg_{n-1}} H_k(\mathbf{F}_nK).
+% \end{align*}
+Dato quindi $K$ un complesso simpliciale filtrato e le inclusioni $g_{i,j}$, siamo pronti a dare la definizione centrale di questo lavoro:
+\begin{definition}
+    Per ogni coppia di indici $i \leq j$, definiamo il $k$-esimo \textbf{gruppo di omologia persistente} di $K$ come il come il sottospazio di $H_k(\mathbf{F}_iK)$ dato da
+    \begin{align*}
+        \mathbf{PH}_{k;i,j}(\mathbf{F}_{*}K) = \text{Im}(H_k(g_{i,j}))
+    \end{align*}
+\end{definition}
+Per brevità, nonostante questi gruppi dipendano dalla filtrazione, d'ora in poi li indicheremo con $\mathbf{PH}_{k;i,j}(K)$.
+
+\begin{remark}
+    Dati $i \leq i' \leq j$, da \eqref{funt-inclusionni} segue che $\mathbf{PH}_{k;i,j}(K) \subseteq \mathbf{PH}_{k;i',j}(K)$, cioè i gruppi di omologia persistente sono monotoni rispetto agli indici della filtrazione.
+\end{remark}
+
+Diciamo che $x \in H_k(\mathbf{F}_iK)$ \textbf{nasce} in $H_k(\mathbf{F}_iK)$ se non appartiene a $\text{Im}(H_k(g_{i-1,i}))$, mentre diciamo che $x$ \textbf{muore} in $H_k(\mathbf{F}_jK)$ se $j$ è il più piccolo indice tale che $H_k(g_{i,j})(x)=0$, nel caso in cui non esista un tale $j$, poniamo l'indice della morte di $x$ uguale a $+\infty$.
+Chiamiamo \textbf{persistenza} di $x$ il numero $j-i$, che rappresenta la distanza tra l'indice della nascita e quello della morte di $x$.
+
+\section{Complessi Simpliciali}
+\section{Sperimentazione e Confronto}
+\section{Conclusioni}
+
+
+\end{document}
