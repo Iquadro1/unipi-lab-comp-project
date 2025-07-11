@@ -1,2 +1,6 @@
 ve/
 datasets/
+#ignore virtual environment directory
+.venv/
+#ignore sample datasets
+dragon_vrip_sampled_*.npy
