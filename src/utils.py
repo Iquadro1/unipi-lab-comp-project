@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Dict
 from numpy.typing import NDArray
 import gudhi as gd
+from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 @dataclass
 class ComplexResult:
@@ -32,76 +33,99 @@ def plot_persistence_diagrams(complexes: Dict[str, ComplexResult], mode: str = "
             gd.plot_persistence_diagram(complex_result.persistence, legend=True)
             plt.title(f"{complex_result.name.upper()} Persistence Diagram")
             plt.show()
+        else:
+            raise ValueError("Unsupported plotting mode. Use 'plotly' or 'gudhi'.")
 
-def visualize_complexes(complexes: Dict[str, ComplexResult], title: str):
-    for complex_result in complexes.values():
-        print(f"\n{complex_result.name.capitalize()} Complex:")
-        triangles = np.array([s[0] for s in complex_result.stree.get_skeleton(2) if len(s[0]) == 3])
-        edges = np.array([s[0] for s in complex_result.stree.get_skeleton(1) if len(s[0]) == 2])
-        
-        fig = go.Figure()
-        
-        # Add points
-        fig.add_trace(go.Scatter3d(
-            x=complex_result.points[:, 0],
-            y=complex_result.points[:, 1], 
-            z=complex_result.points[:, 2],
-            mode='markers',
-            marker=dict(size=3, color="#4a7fb5"),
-            name='Points'
-        ))
-        #8f90d3
-        
-        # Add triangular mesh if triangles exist
-        if len(triangles) > 0:
-            fig.add_trace(go.Mesh3d(
-            x=complex_result.points[:, 0],
-            y=complex_result.points[:, 1],
-            z=complex_result.points[:, 2],
-            i=triangles[:, 0],
-            j=triangles[:, 1],
-            k=triangles[:, 2],
-            # intensity=complex_result.points[:, 2],  # Use Z coordinate for coloring
-            # colorscale='Haline',
-            color='#1d6fa8',
-            # opacity=0.6,
-            name='Triangular Mesh',
-            showlegend=True
-            # showscale=False
-            ))
-        ##bbbeeb
-        
-        # Add edges
-        if len(edges) > 0:
-            edge_x = []
-            edge_y = []
-            edge_z = []
-            for edge in edges:
-                edge_x.extend([complex_result.points[edge[0], 0], complex_result.points[edge[1], 0], None])
-                edge_y.extend([complex_result.points[edge[0], 1], complex_result.points[edge[1], 1], None])
-                edge_z.extend([complex_result.points[edge[0], 2], complex_result.points[edge[1], 2], None])
+def visualize_complexes(complexes: Dict[str, ComplexResult], title: str, mode: str = "matplotlib"):
+    """Visualize simplicial complexes using either matplotlib or plotly"""
+    if mode == "matplotlib":
+        for complex_result in complexes.values():
+            print(f"\n{complex_result.name.capitalize()} Complex:")
+        for complex_result in complexes.values():
+            print(f"\n{complex_result.name.capitalize()} Complex:")
+            triangles = np.array([s[0] for s in complex_result.stree.get_skeleton(2) if len(s[0]) == 3])
+            edge_indices = np.array([s[0] for s in complex_result.stree.get_skeleton(1) if len(s[0]) == 2])
+            #print(f"{edge_indices=}")
+            edges = complex_result.points[edge_indices]
+            fig = plt.figure()
+            ax = fig.add_subplot(projection='3d')
+            ax.plot_trisurf(complex_result.points[:, 0], complex_result.points[:, 1], complex_result.points[:, 2], triangles = triangles)
+            ax.scatter3D(complex_result.points[:,0], complex_result.points[:,1], complex_result.points[:,2])
+            ax.add_collection3d(Line3DCollection(edges, alpha=0.3))
+            plt.title(f"\n{complex_result.name.upper()} Complex Representation of {title}")
+            plt.show()
+    elif mode == "plotly":
+        """Visualize simplicial complexes using Plotly"""
+        for complex_result in complexes.values():
+            print(f"\n{complex_result.name.capitalize()} Complex:")
+            triangles = np.array([s[0] for s in complex_result.stree.get_skeleton(2) if len(s[0]) == 3])
+            edges = np.array([s[0] for s in complex_result.stree.get_skeleton(1) if len(s[0]) == 2])
             
+            fig = go.Figure()
+            
+            # Add points
             fig.add_trace(go.Scatter3d(
-                x=edge_x,
-                y=edge_y,
-                z=edge_z,
-                mode='lines',
-                line=dict(color='#0e456a', width=1.5),
-                name='Edges'
+                x=complex_result.points[:, 0],
+                y=complex_result.points[:, 1], 
+                z=complex_result.points[:, 2],
+                mode='markers',
+                marker=dict(size=3, color="#4a7fb5"),
+                name='Points'
             ))
-        ##6b6ca3
-        # '#1d6fa8'
-        fig.update_layout(
-            title=f"{complex_result.name.upper()} Complex Representation of {title}",
-            scene=dict(
-                xaxis_title='X',
-                yaxis_title='Y',
-                zaxis_title='Z'
-            ),
-            showlegend=True
-        )
-        
-        fig.show()
+            #8f90d3
+            
+            # Add triangular mesh if triangles exist
+            if len(triangles) > 0:
+                fig.add_trace(go.Mesh3d(
+                x=complex_result.points[:, 0],
+                y=complex_result.points[:, 1],
+                z=complex_result.points[:, 2],
+                i=triangles[:, 0],
+                j=triangles[:, 1],
+                k=triangles[:, 2],
+                # intensity=complex_result.points[:, 2],  # Use Z coordinate for coloring
+                # colorscale='Haline',
+                color='#1d6fa8',
+                # opacity=0.6,
+                name='Triangular Mesh',
+                showlegend=True
+                # showscale=False
+                ))
+            ##bbbeeb
+            
+            # Add edges
+            if len(edges) > 0:
+                edge_x = []
+                edge_y = []
+                edge_z = []
+                for edge in edges:
+                    edge_x.extend([complex_result.points[edge[0], 0], complex_result.points[edge[1], 0], None])
+                    edge_y.extend([complex_result.points[edge[0], 1], complex_result.points[edge[1], 1], None])
+                    edge_z.extend([complex_result.points[edge[0], 2], complex_result.points[edge[1], 2], None])
+                
+                fig.add_trace(go.Scatter3d(
+                    x=edge_x,
+                    y=edge_y,
+                    z=edge_z,
+                    mode='lines',
+                    line=dict(color='#0e456a', width=1.5),
+                    name='Edges'
+                ))
+            ##6b6ca3
+            # '#1d6fa8'
+            fig.update_layout(
+                title=f"{complex_result.name.upper()} Complex Representation of {title}",
+                scene=dict(
+                    xaxis_title='X',
+                    yaxis_title='Y',
+                    zaxis_title='Z'
+                ),
+                showlegend=True
+            )
+            
+            fig.show()
+    else:
+        raise ValueError("Unsupported visualization mode. Use 'matplotlib' or 'plotly'.")
 
 import copy
 from sklearn import manifold
