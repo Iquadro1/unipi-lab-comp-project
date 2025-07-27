@@ -3,8 +3,8 @@ on:
   push:
     branches:
       - main
-    paths:
-      - '**.ipynb' # Trigger this workflow only when.ipynb files are pushed
+    # paths:
+    #   - '**.ipynb' # Trigger this workflow only when.ipynb files are pushed
 jobs:
   convert-and-deploy:
     runs-on: ubuntu-latest
