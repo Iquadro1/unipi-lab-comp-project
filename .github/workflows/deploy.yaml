@@ -33,6 +33,47 @@ jobs:
             # Convert each notebook, ensuring outputs are included by default
             jupyter nbconvert --to html "$notebook" --output-dir "_build/html"
           done
+      - name: Generate homepage
+        run: |
+          cat > _build/html/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Notebooks Collection</title>
+              <style>
+                  body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+                  h1 { color: #333; text-align: center; }
+                  .notebook-list { list-style-type: none; padding: 0; }
+                  .notebook-item { margin: 10px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+                  .notebook-item a { text-decoration: none; color: #0066cc; font-size: 18px; }
+                  .notebook-item a:hover { text-decoration: underline; }
+                  .notebook-path { font-size: 14px; color: #666; margin-top: 5px; }
+              </style>
+          </head>
+          <body>
+              <h1>Notebooks Collection</h1>
+              <ul class="notebook-list">
+          EOF
+          
+          # Find all HTML files (excluding index.html) and add them to the homepage
+          find _build/html -name "*.html" ! -name "index.html" | sort | while read file; do
+              # Get the filename without path and extension for display
+              display_name=$(basename "$file" .html)
+              # Get relative path from _build/html
+              relative_path=$(echo "$file" | sed 's|_build/html/||')
+              echo "                  <li class=\"notebook-item\">" >> _build/html/index.html
+              echo "                      <a href=\"$relative_path\">$display_name</a>" >> _build/html/index.html
+              echo "                      <div class=\"notebook-path\">$relative_path</div>" >> _build/html/index.html
+              echo "                  </li>" >> _build/html/index.html
+          done
+          
+          cat >> _build/html/index.html << 'EOF'
+              </ul>
+          </body>
+          </html>
+          EOF
         # Alternative (simpler for many cases): Use the marketplace action
         # - name: Convert.ipynb's with runsascoded/nbconvert-action
         #   uses: runsascoded/nbconvert-action@v1.2
