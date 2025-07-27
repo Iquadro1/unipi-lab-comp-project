@@ -29,7 +29,7 @@ jobs:
       - name: Convert.ipynb to HTML # Loop through all.ipynb files and convert them
         run: |
           mkdir -p _build/html # Create an output directory for the HTML files
-          for notebook in $(find. -name "*.ipynb"); do
+          for notebook in $(find -name "*.ipynb"); do
             # Convert each notebook, ensuring outputs are included by default
             jupyter nbconvert --to html "$notebook" --output-dir "_build/html"
           done
