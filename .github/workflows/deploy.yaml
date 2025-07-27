@@ -1,0 +1,47 @@
+name: Convert & Deploy Individual Notebooks
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**.ipynb' # Trigger this workflow only when.ipynb files are pushed
+jobs:
+  convert-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed if you use actions that commit back, e.g. runsascoded/nbconvert-action
+      pages: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x' # Use a specific Python version compatible with your notebooks
+          cache: 'pip'
+      - name: Install nbconvert and other dependencies
+        run: |
+          pip install nbconvert # Install the nbconvert tool
+          # Install pandoc: Essential for nbconvert's full capabilities [9, 10]
+          sudo apt-get update && sudo apt-get install -y pandoc
+          pip install -r requirements.txt # Install any Python dependencies your notebooks require
+      - name: Convert.ipynb to HTML # Loop through all.ipynb files and convert them
+        run: |
+          mkdir -p _build/html # Create an output directory for the HTML files
+          for notebook in $(find. -name "*.ipynb"); do
+            # Convert each notebook, ensuring outputs are included by default
+            jupyter nbconvert --to html "$notebook" --output-dir "_build/html"
+          done
+        # Alternative (simpler for many cases): Use the marketplace action
+        # - name: Convert.ipynb's with runsascoded/nbconvert-action
+        #   uses: runsascoded/nbconvert-action@v1.2
+        #   with:
+        #     args: "-a -x --output-dir _build/html" # -a: all notebooks, -x: execute notebooks, --output-dir: specify output location [11]
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "_build/html" # Path to the directory containing the converted HTML files
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 # Deploys the uploaded artifact to GitHub Pages
