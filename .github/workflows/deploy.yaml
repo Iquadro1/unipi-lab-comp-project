@@ -26,28 +26,12 @@ jobs:
           # Install pandoc: Essential for nbconvert's full capabilities [9, 10]
           sudo apt-get update && sudo apt-get install -y pandoc
           pip install -r requirements.txt # Install any Python dependencies your notebooks require
-      - name: Convert.ipynb to HTML # Loop through specific files and convert them
+      - name: Convert.ipynb to HTML # Loop through all.ipynb files and convert them
         run: |
           mkdir -p _build/html # Create an output directory for the HTML files
-          
-          # Copy src directory to output
-          if [ -d "src" ]; then
-            cp -r src _build/html/
-          fi
-          
-          # Convert notebooks in root directory only (not in subdirectories)
-          for notebook in *.ipynb; do
-            if [ -f "$notebook" ]; then
-              # Convert each notebook, ensuring outputs are included by default
-              jupyter nbconvert --to html "$notebook" --output-dir "_build/html"
-            fi
-          done
-          
-          # Copy Python files in root directory only
-          for pyfile in *.py; do
-            if [ -f "$pyfile" ]; then
-              cp "$pyfile" "_build/html/"
-            fi
+          for notebook in $(find -name "*.ipynb"); do
+            # Convert each notebook, ensuring outputs are included by default
+            jupyter nbconvert --to html "$notebook" --output-dir "_build/html"
           done
       - name: Generate homepage
         run: |
@@ -66,62 +50,27 @@ jobs:
                   .notebook-item a { text-decoration: none; color: #0066cc; font-size: 18px; }
                   .notebook-item a:hover { text-decoration: underline; }
                   .notebook-path { font-size: 14px; color: #666; margin-top: 5px; }
-                  .section { margin: 30px 0; }
-                  .section h2 { color: #444; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
               </style>
           </head>
           <body>
-              <h1>Project Collection</h1>
-              
-              <div class="section">
-                  <h2>Notebooks</h2>
-                  <ul class="notebook-list">
+              <h1>Notebooks Collection</h1>
+              <ul class="notebook-list">
           EOF
           
-          # Find HTML files converted from notebooks (excluding index.html)
-          find _build/html -maxdepth 1 -name "*.html" ! -name "index.html" | sort | while read file; do
+          # Find all HTML files (excluding index.html) and add them to the homepage
+          find _build/html -name "*.html" ! -name "index.html" | sort | while read file; do
               # Get the filename without path and extension for display
               display_name=$(basename "$file" .html)
               # Get relative path from _build/html
               relative_path=$(echo "$file" | sed 's|_build/html/||')
-              echo "                      <li class=\"notebook-item\">" >> _build/html/index.html
-              echo "                          <a href=\"$relative_path\">$display_name</a>" >> _build/html/index.html
-              echo "                          <div class=\"notebook-path\">$relative_path</div>" >> _build/html/index.html
-              echo "                      </li>" >> _build/html/index.html
+              echo "                  <li class=\"notebook-item\">" >> _build/html/index.html
+              echo "                      <a href=\"$relative_path\">$display_name</a>" >> _build/html/index.html
+              echo "                      <div class=\"notebook-path\">$relative_path</div>" >> _build/html/index.html
+              echo "                  </li>" >> _build/html/index.html
           done
           
           cat >> _build/html/index.html << 'EOF'
-                  </ul>
-              </div>
-              
-              <div class="section">
-                  <h2>Python Files</h2>
-                  <ul class="notebook-list">
-          EOF
-          
-          # Find Python files in root
-          find _build/html -maxdepth 1 -name "*.py" | sort | while read file; do
-              display_name=$(basename "$file")
-              relative_path=$(echo "$file" | sed 's|_build/html/||')
-              echo "                      <li class=\"notebook-item\">" >> _build/html/index.html
-              echo "                          <a href=\"$relative_path\">$display_name</a>" >> _build/html/index.html
-              echo "                          <div class=\"notebook-path\">$relative_path</div>" >> _build/html/index.html
-              echo "                      </li>" >> _build/html/index.html
-          done
-          
-          cat >> _build/html/index.html << 'EOF'
-                  </ul>
-              </div>
-              
-              <div class="section">
-                  <h2>Source Code Directory</h2>
-                  <ul class="notebook-list">
-                      <li class="notebook-item">
-                          <a href="src/">src/</a>
-                          <div class="notebook-path">Source code directory</div>
-                      </li>
-                  </ul>
-              </div>
+              </ul>
           </body>
           </html>
           EOF
