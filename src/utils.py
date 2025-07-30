@@ -72,7 +72,7 @@ def create_complexes(point_cloud: NDArray[np.float64], max_edge_length: float, m
     
     # Create complexes with timing and memory tracking
     for name, complex_factory, stree_params, points in complex_configs:
-        print(f"Creating {name.replace('_', ' ').title()} Complex")
+        # print(f"Creating {name.replace('_', ' ').title()} Complex")
         
         # Memory before complex creation
         mem_before = get_memory_usage()
@@ -108,8 +108,8 @@ def create_complexes(point_cloud: NDArray[np.float64], max_edge_length: float, m
             memory_usage_mb=memory_usage
         )
         
-        print(f"{name.capitalize()} complex: {complexes[name].num_simplices} simplices "
-              f"(processed in {processing_time:.3f}s, memory: {format_memory(memory_usage)})")
+        # print(f"{name.capitalize()} complex: {complexes[name].num_simplices} simplices "
+        #       f"(processed in {processing_time:.3f}s, memory: {format_memory(memory_usage)})")
 
     return complexes
 
