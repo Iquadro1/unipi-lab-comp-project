@@ -3,7 +3,9 @@ from dataclasses import dataclass
 from typing import Dict
 from numpy.typing import NDArray
 import gudhi as gd
-from mpl_toolkits.mplot3d.art3d import Line3DCollection
+import time
+import psutil
+import os
 
 @dataclass
 class ComplexResult:
@@ -14,10 +16,175 @@ class ComplexResult:
     persistence: list[tuple[int, tuple[np.float64, np.float64]]]
     intervals: Dict[int, NDArray[np.float64]]
     points: NDArray[np.float64]
+    # Performance metrics
+    processing_time_s: float
+    memory_usage_mb: float
+    
+    def get_max_dimension(self) -> int:
+        """Get the maximum dimension of the complex"""
+        return max(self.intervals.keys()) if self.intervals else 0
+
+def get_memory_usage():
+    """Get current memory usage in MB"""
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss / 1024 / 1024
+
+def format_memory(mb):
+    """Format memory size for display"""
+    if mb < 1024:
+        return f"{mb:.3f} MB"
+    else:
+        return f"{mb/1024:.3f} GB"
+
+def estimate_max_edge_length(point_cloud: NDArray[np.float64], scale_factor: float = 0.05) -> float:
+    """Estimate max edge length from point cloud"""
+    data_range = np.linalg.norm(np.ptp(point_cloud, axis=0))
+    return max(data_range * scale_factor, 1e-6)
+
+def create_complexes(point_cloud: NDArray[np.float64], max_edge_length: float, max_dimension: int, landmarks_factor: float=0.15) -> Dict[str, ComplexResult]:
+    """Create all complexes and compute persistence"""
+    complexes = {}
+    
+    # Prepare landmarks for witness complexes
+    num_landmarks = max(1, int(len(point_cloud) * landmarks_factor))
+    landmarks = gd.subsampling.choose_n_farthest_points(points=point_cloud, nb_points=num_landmarks)
+    witness_points = np.array(landmarks)
+    
+    # Define complex configurations: (name, complex_factory, stree_params, points)
+    complex_configs = [
+        ("rips", lambda: gd.RipsComplex(points=point_cloud, max_edge_length=max_edge_length), 
+         {"max_dimension": max_dimension}, point_cloud),
+        ("cech", lambda: gd.DelaunayCechComplex(points=point_cloud),
+         {"max_alpha_square": max_edge_length**2}, point_cloud),
+        ("delaunay_cech", lambda: gd.DelaunayCechComplex(points=point_cloud),
+         {}, point_cloud),
+        ("alpha", lambda: gd.AlphaComplex(points=point_cloud), 
+         {"max_alpha_square": max_edge_length**2}, point_cloud),
+        ("delaunay_alpha", lambda: gd.AlphaComplex(points=point_cloud), 
+         {}, point_cloud),
+        ("witness", lambda: gd.EuclideanWitnessComplex(witnesses=point_cloud, landmarks=landmarks), 
+         {"max_alpha_square": 0}, witness_points),
+        ("relaxed_witness", lambda: gd.EuclideanWitnessComplex(witnesses=point_cloud, landmarks=landmarks), 
+         {"max_alpha_square": max_edge_length**2}, witness_points),
+        ("strong_witness", lambda: gd.EuclideanStrongWitnessComplex(witnesses=point_cloud, landmarks=landmarks), 
+         {"max_alpha_square": max_edge_length**2}, witness_points),
+    ]
+    
+    # Create complexes with timing and memory tracking
+    for name, complex_factory, stree_params, points in complex_configs:
+        print(f"Creating {name.replace('_', ' ').title()} Complex")
+        
+        # Memory before complex creation
+        mem_before = get_memory_usage()
+        creation_start = time.time()
+        
+        # Create simplex tree
+        stree = complex_factory().create_simplex_tree(**stree_params)
+        
+        persistence = stree.persistence()
+        
+        processing_time = time.time() - creation_start
+        memory_usage = get_memory_usage() - mem_before
+
+        # Store results
+        intervals = {}
+        # Filter to only include desired dimensions
+        filtered_persistence = [(dim, interval) for dim, interval in persistence if dim < max_dimension]
+
+        for dim in range(max_dimension):
+            intervals[dim] = stree.persistence_intervals_in_dimension(dim)
+            # Transform alpha intervals (square root of filtration values)
+            if "alpha" in name:
+                intervals[dim] = np.sqrt(intervals[dim])
+
+        complexes[name] = ComplexResult(
+            stree=stree,
+            name=name,
+            num_simplices=stree.num_simplices(),
+            persistence=filtered_persistence,
+            intervals=intervals,
+            points=points,
+            processing_time_s=processing_time,
+            memory_usage_mb=memory_usage
+        )
+        
+        print(f"{name.capitalize()} complex: {complexes[name].num_simplices} simplices "
+              f"(processed in {processing_time:.3f}s, memory: {format_memory(memory_usage)})")
+
+    return complexes
+
+def print_performance_table(complex_results: Dict[str, Dict[str, ComplexResult]]):
+    """Print a table showing processing time and memory usage for each (sample, complex) combination"""
+    
+    # Extract all sample names and complex types
+    sample_names = list(complex_results.keys())
+    if not sample_names:
+        print("No results to display")
+        return
+    
+    # Get complex types from the first sample (assuming all samples have same complex types)
+    complex_types = list(complex_results[sample_names[0]].keys())
+    
+    print("\n" + "="*120)
+    print("PERFORMANCE SUMMARY TABLE")
+    print("="*120)
+    
+    # Create header
+    header = f"{'Sample':<15}"
+    for complex_type in complex_types:
+        header += f"{complex_type.replace('_', ' ').title():<18}"
+    print(header)
+    print("-" * 120)
+    
+    # Print time table
+    print(f"{'PROCESSING TIME (s)':<15}")
+    print("-" * 120)
+    for sample in sample_names:
+        row = f"{sample:<15}"
+        for complex_type in complex_types:
+            time_val = complex_results[sample][complex_type].processing_time_s
+            row += f"{time_val:<18.3f}"
+        print(row)
+    
+    print()
+    
+    # Print memory table
+    print(f"{'MEMORY USAGE (MB)':<15}")
+    print("-" * 120)
+    for sample in sample_names:
+        row = f"{sample:<15}"
+        for complex_type in complex_types:
+            memory_val = complex_results[sample][complex_type].memory_usage_mb
+            row += f"{memory_val:<18.3f}"
+        print(row)
+    
+    print("-" * 120)
+    
+    # Print summary statistics
+    print("\nSUMMARY STATISTICS:")
+    print("-" * 60)
+    
+    # Calculate totals and averages
+    for metric in [("processing_time_s"), ("memory_usage_mb")]:
+        print(f"\n{metric.replace('_', ' ').title().replace('S', '(s)').replace('Mb', '(MB)')}:")
+        
+        # Per complex type statistics
+        for complex_type in complex_types:
+            values = [getattr(complex_results[sample][complex_type], metric) for sample in sample_names]
+            avg_val = np.mean(values)
+            total_val = np.sum(values)
+            min_val = np.min(values)
+            max_val = np.max(values)
+            
+            print(f"  {complex_type.replace('_', ' ').title():<20}: "
+                  f"Total={total_val:.3f}, Avg={avg_val:.3f}, "
+                  f"Min={min_val:.3f}, Max={max_val:.3f}")
+    
+    print("="*120)
 
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-import plotly_persistence as pp
+import src.plotly_persistence as pp
 
 def plot_persistence_diagrams(complexes: Dict[str, ComplexResult], mode: str = "gudhi"):
     """Plot persistence diagrams for all complexes"""
@@ -36,11 +203,11 @@ def plot_persistence_diagrams(complexes: Dict[str, ComplexResult], mode: str = "
         else:
             raise ValueError("Unsupported plotting mode. Use 'plotly' or 'gudhi'.")
 
+from mpl_toolkits.mplot3d.art3d import Line3DCollection
+
 def visualize_complexes(complexes: Dict[str, ComplexResult], title: str, mode: str = "matplotlib"):
     """Visualize simplicial complexes using either matplotlib or plotly"""
     if mode == "matplotlib":
-        for complex_result in complexes.values():
-            print(f"\n{complex_result.name.capitalize()} Complex:")
         for complex_result in complexes.values():
             print(f"\n{complex_result.name.capitalize()} Complex:")
             triangles = np.array([s[0] for s in complex_result.stree.get_skeleton(2) if len(s[0]) == 3])
@@ -140,9 +307,7 @@ def compute_bottleneck_distances(complexes: Dict[str, ComplexResult], max_dimens
         # Initialize distance tensor: [max_dimension, n_complexes, n_complexes]
     distance_matrices = np.zeros((max_dimension, n_complexes, n_complexes))
 
-    print("\n" + "="*60)
-    print("BOTTLENECK DISTANCE COMPUTATION")
-    print("="*60)
+    print("\n--- BOTTLENECK DISTANCE COMPUTATION ---")
 
     # Compute all pairwise distances for distance matrices
     for i, name1 in enumerate(complex_names):
@@ -166,10 +331,8 @@ def compute_bottleneck_distances(complexes: Dict[str, ComplexResult], max_dimens
     #         results[label] = max_distance
     
     # Print distance matrix as a table
-    print("\n" + "="*80)
-    print("MAX BOTTLENECK DISTANCE MATRIX")
-    print("="*80)
-    
+    print("\n--- MAX BOTTLENECK DISTANCE MATRIX ---")
+
     # Create header
     header = f"{'Complex':<20}"
     for name in complex_names:
@@ -188,25 +351,30 @@ def compute_bottleneck_distances(complexes: Dict[str, ComplexResult], max_dimens
             else:
                 row += f"{max_distances[j, i]:<18.8f}"
         print(row)
-    
-    print("\n" + "="*60)
-    print("CORRECTED BOTTLENECK DISTANCE COMPUTATION")
-    print("="*60)
-    
+
+    print("\n--- CORRECTED BOTTLENECK DISTANCE COMPUTATION ---")
+
     # Handle infinity intervals by finding global maximum and replacing infinities
     all_intervals = []
     for complex_result in complexes.values():
         for dim in range(max_dimension):
             all_intervals.extend(complex_result.intervals[dim])
-    
+
     # Find global maximum finite death value
-    global_max_death = max(
+    finite_death_values = [
         interval[1] for interval in all_intervals 
         if interval[1] != float('inf')
-    )
-    replacement_value = 1.5 * global_max_death
-    print(f"\nGlobal maximum death value: {global_max_death}")
-    print(f"Using replacement value for infinity intervals: {replacement_value}")
+    ]
+    
+    if not finite_death_values:
+        # If all intervals have infinite death values, use a default replacement
+        replacement_value = 1.0
+        print(f"\nNo finite death values found. Using default replacement value: {replacement_value}")
+    else:
+        global_max_death = max(finite_death_values)
+        replacement_value = 1.5 * global_max_death
+        print(f"\nGlobal maximum death value: {global_max_death}")
+        print(f"Using replacement value for infinity intervals: {replacement_value}")
     
     # Create corrected intervals with infinity replacement
     corrected_complexes = {}
@@ -242,10 +410,8 @@ def compute_bottleneck_distances(complexes: Dict[str, ComplexResult], max_dimens
     corrected_max_distances = np.max(corrected_distance_matrices, axis=0)
     
     # Print distance matrix as a table
-    print("\n" + "="*80)
-    print("CORRECTED MAX BOTTLENECK DISTANCE MATRIX")
-    print("="*80)
-    
+    print("\n--- CORRECTED MAX BOTTLENECK DISTANCE MATRIX ---")
+
     # Create header
     header = f"{'Complex':<20}"
     for name in complex_names:
@@ -266,10 +432,8 @@ def compute_bottleneck_distances(complexes: Dict[str, ComplexResult], max_dimens
         print(row)
     
     # Create MDS visualization
-    print("\n" + "="*60)
-    print("MDS VISUALIZATION")
-    print("="*60)
-    
+    print("\n--- MDS VISUALIZATION ---")
+
     # Setup MDS
     mds = manifold.MDS(
         n_components=2,
