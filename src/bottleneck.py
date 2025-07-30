@@ -108,7 +108,7 @@ def compute_bottleneck_distances(complex_results: Dict[str, utils.ComplexResult]
         distance_matrices[dim] = compute_bottleneck_distances_from_intervals(
             {name: complex_results[name].intervals[dim] for name in complex_names}
         )
-
+        print_matrix_as_table(distance_matrices[dim], complex_names)
         # if distance_matrices[dim] has an infinity entry, apply correction to all complex results
         if np.any(np.isinf(distance_matrices[dim])):
             all_intervals = [
@@ -124,7 +124,6 @@ def compute_bottleneck_distances(complex_results: Dict[str, utils.ComplexResult]
                     complex_results[name], dim, replacement_value
                 )
             distance_matrices[dim] = compute_bottleneck_distances_from_intervals(corrected_intervals)
-        print_matrix_as_table(distance_matrices[dim], complex_names)
 
     return distance_matrices
 
