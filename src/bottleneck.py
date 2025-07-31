@@ -81,10 +81,17 @@ def compute_mds(distance_matrices: NDArray[np.float64]) -> Dict[int, NDArray[np.
     
     mds_results = {}
     for dim in range(distance_matrices.shape[0]):
-        try:
+        # Check if the distance matrix is exactly all zeros (no tolerance)
+        # Get upper triangular part excluding diagonal for comparison
+        upper_tri = distance_matrices[dim][np.triu_indices_from(distance_matrices[dim], k=1)]
+        
+        if np.all(upper_tri == 0):
+            # If all distances are exactly zero, create superimposed points at origin
+            n_points = distance_matrices[dim].shape[0]
+            mds_results[dim] = np.zeros((n_points, 2))
+            print(f"Warning: All distances are exactly zero for dimension {dim}. Using superimposed points at origin.")
+        else:
             mds_results[dim] = mds.fit_transform(distance_matrices[dim])
-        except Exception as e:
-            return None, f"mds_error for dim {dim}: {e}"
 
     return mds_results
 

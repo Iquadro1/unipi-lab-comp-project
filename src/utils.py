@@ -189,7 +189,7 @@ import src.plotly_persistence as pp
 def plot_persistence_diagrams(complexes: Dict[str, ComplexResult], mode: str = "gudhi"):
     """Plot persistence diagrams for all complexes"""
     for complex_result in complexes.values():
-        print(f"\n{complex_result.name.capitalize()} Complex Persistence Diagram:")
+        # print(f"\n{complex_result.name.capitalize()} Complex Persistence Diagram:")
         if mode == "plotly":
             pp.plot_persistence_diagram(
                 complex_result.persistence, 
@@ -207,9 +207,9 @@ from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 def visualize_complexes(complexes: Dict[str, ComplexResult], title: str, mode: str = "matplotlib"):
     """Visualize simplicial complexes using either matplotlib or plotly"""
+    # print(f"\n{complex_result.name.capitalize()} Complex:")
     if mode == "matplotlib":
         for complex_result in complexes.values():
-            print(f"\n{complex_result.name.capitalize()} Complex:")
             triangles = np.array([s[0] for s in complex_result.stree.get_skeleton(2) if len(s[0]) == 3])
             edge_indices = np.array([s[0] for s in complex_result.stree.get_skeleton(1) if len(s[0]) == 2])
             #print(f"{edge_indices=}")
@@ -224,7 +224,6 @@ def visualize_complexes(complexes: Dict[str, ComplexResult], title: str, mode: s
     elif mode == "plotly":
         """Visualize simplicial complexes using Plotly"""
         for complex_result in complexes.values():
-            print(f"\n{complex_result.name.capitalize()} Complex:")
             triangles = np.array([s[0] for s in complex_result.stree.get_skeleton(2) if len(s[0]) == 3])
             edges = np.array([s[0] for s in complex_result.stree.get_skeleton(1) if len(s[0]) == 2])
             
