@@ -36,13 +36,61 @@ def format_memory(mb):
     else:
         return f"{mb/1024:.3f} GB"
 
+from scipy.spatial.distance import cdist
+
+def calculate_distance(points: NDArray[np.float64]) -> tuple[NDArray[np.float64], float, float, float]:
+    
+    # Calculate pairwise distances between all points
+    print("Calculating pairwise distances...")
+    distances = cdist(points, points, metric='euclidean')
+    
+    # Set diagonal to infinity to exclude self-distances (distance from point to itself)
+    np.fill_diagonal(distances, np.inf)
+    
+    # Find minimum distance for each point to all other points
+    min_distances = np.min(distances, axis=1)
+    
+    # Calculate mean of minimum distances
+    mean_min_distance = np.mean(min_distances)
+
+    max_min_distance = np.max(min_distances)
+
+    median_min_distance = np.median(min_distances)
+    
+    # print(f"Mean of minimum distances: {mean_min_distance:.6f}")
+    # print(f"Standard deviation: {np.std(min_distances):.6f}")
+    # print(f"Min value: {np.min(min_distances):.6f}")
+    # print(f"Max value: {max_min_distance:.6f}")
+    # print(f"Median value: {median_min_distance:.6f}")
+
+    return min_distances, max_min_distance, mean_min_distance, median_min_distance
+
+from sklearn.neighbors import NearestNeighbors
+def estimate_max_edge_length_knn(point_cloud: NDArray[np.float64], k: int = 6, scale_factor: float = 1.0) -> float:
+    """Estimate max edge length based on k-nearest neighbor distances"""
+    
+    nbrs = NearestNeighbors(n_neighbors=k+1).fit(point_cloud)  # +1 because first neighbor is the point itself
+    distances, _ = nbrs.kneighbors(point_cloud)
+    
+    # Use mean of k-th nearest neighbor distances
+    kth_distances = distances[:, k]  # k-th neighbor (0-indexed, so k is actually k+1-th)
+    mean_kth_distance = np.mean(kth_distances)
+    
+    return max(mean_kth_distance * scale_factor, 1e-6)
+
+def estimate_max_edge_length_knn_robust(point_cloud, k=6, percentile=75):
+    nbrs = NearestNeighbors(n_neighbors=k+1).fit(point_cloud)
+    distances, _ = nbrs.kneighbors(point_cloud)
+    kth_distances = distances[:, k]
+    return np.percentile(kth_distances, percentile)
+
 def estimate_max_edge_length(point_cloud: NDArray[np.float64], scale_factor: float = 0.05) -> float:
     """Estimate max edge length from point cloud"""
     data_range = np.linalg.norm(np.ptp(point_cloud, axis=0))
     return max(data_range * scale_factor, 1e-6)
 
-def create_complexes(point_cloud: NDArray[np.float64], max_edge_length: float, max_dimension: int, landmarks_factor: float=0.15) -> Dict[str, ComplexResult]:
-    """Create all complexes and compute persistence"""
+def create_complexes(point_cloud: NDArray[np.float64], max_dimension: int, landmarks_factor: float=0.15) -> Dict[str, ComplexResult]:
+    """Create all complexes and compute persistence with optimized parameters for each complex type"""
     complexes = {}
     
     # Prepare landmarks for witness complexes
@@ -50,66 +98,94 @@ def create_complexes(point_cloud: NDArray[np.float64], max_edge_length: float, m
     landmarks = gd.subsampling.choose_n_farthest_points(points=point_cloud, nb_points=num_landmarks)
     witness_points = np.array(landmarks)
     
-    # Define complex configurations: (name, complex_factory, stree_params, points)
+    # Calculate adaptive parameters based on point cloud characteristics
+    _, _, _, median_min_dist = calculate_distance(point_cloud)
+    
+    max_edge_length = median_min_dist * 2
+
+    # Define complex-specific parameters
+    rips_edge_length = max_edge_length * 1.3  # Use provided edge length
+    alpha_value = (max_edge_length * 0.6) ** 2  # Slightly smaller, squared for alpha
+    cech_value = (max_edge_length * 0.6) ** 2   # Between rips and alpha
+    witness_value = (max_edge_length * 1.2) ** 2  # More liberal for witness complexes
+    strong_witness_value = (max_edge_length * 1.4) ** 2  # More conservative for strong witness complexes   
+
+    # Define complex configurations with optimized parameters
     complex_configs = [
-        ("rips", lambda: gd.RipsComplex(points=point_cloud, max_edge_length=max_edge_length), 
+        ("rips", lambda: gd.RipsComplex(points=point_cloud, max_edge_length=rips_edge_length), 
          {"max_dimension": max_dimension}, point_cloud),
+        
         ("cech", lambda: gd.DelaunayCechComplex(points=point_cloud),
-         {"max_alpha_square": max_edge_length**2}, point_cloud),
+         {"max_alpha_square": cech_value}, point_cloud),
+        
         ("delaunay_cech", lambda: gd.DelaunayCechComplex(points=point_cloud),
-         {}, point_cloud),
+         {}, point_cloud),  # No filtration limit
+        
         ("alpha", lambda: gd.AlphaComplex(points=point_cloud), 
-         {"max_alpha_square": max_edge_length**2}, point_cloud),
+         {"max_alpha_square": alpha_value}, point_cloud),
+        
         ("delaunay_alpha", lambda: gd.AlphaComplex(points=point_cloud), 
-         {}, point_cloud),
+         {}, point_cloud),  # No filtration limit
+        
         ("witness", lambda: gd.EuclideanWitnessComplex(witnesses=point_cloud, landmarks=landmarks), 
-         {"max_alpha_square": 0}, witness_points),
+         {"max_alpha_square": 0}, witness_points),  # Strict witness
+        
         ("relaxed_witness", lambda: gd.EuclideanWitnessComplex(witnesses=point_cloud, landmarks=landmarks), 
-         {"max_alpha_square": max_edge_length**2}, witness_points),
+         {"max_alpha_square": witness_value}, witness_points),
+        
         ("strong_witness", lambda: gd.EuclideanStrongWitnessComplex(witnesses=point_cloud, landmarks=landmarks), 
-         {"max_alpha_square": max_edge_length**2}, witness_points),
+         {"max_alpha_square": strong_witness_value}, witness_points),  # More conservative
     ]
+    
+    print(f"\nUsing adaptive parameters:")
+    print(f"  Rips edge length: {rips_edge_length:.6f}")
+    print(f"  Alpha max value: {np.sqrt(alpha_value):.6f} (alpha²={alpha_value:.6f})")
+    print(f"  Cech max value: {np.sqrt(cech_value):.6f} (alpha²={cech_value:.6f})")
+    print(f"  Witness max value: {np.sqrt(witness_value):.6f} (alpha²={witness_value:.6f})")
     
     # Create complexes with timing and memory tracking
     for name, complex_factory, stree_params, points in complex_configs:
-        # print(f"Creating {name.replace('_', ' ').title()} Complex")
-        
-        # Memory before complex creation
-        mem_before = get_memory_usage()
-        creation_start = time.time()
-        
-        # Create simplex tree
-        stree = complex_factory().create_simplex_tree(**stree_params)
-        
-        persistence = stree.persistence()
-        
-        processing_time = time.time() - creation_start
-        memory_usage = get_memory_usage() - mem_before
+        try:
+            # Memory before complex creation
+            mem_before = get_memory_usage()
+            creation_start = time.time()
+            
+            # Create simplex tree
+            stree = complex_factory().create_simplex_tree(**stree_params)
+            
+            persistence = stree.persistence()
+            
+            processing_time = time.time() - creation_start
+            memory_usage = get_memory_usage() - mem_before
 
-        # Store results
-        intervals = {}
-        # Filter to only include desired dimensions
-        filtered_persistence = [(dim, interval) for dim, interval in persistence if dim < max_dimension]
+            # Store results
+            intervals = {}
+            # Filter to only include desired dimensions
+            filtered_persistence = [(dim, interval) for dim, interval in persistence if dim < max_dimension]
 
-        for dim in range(max_dimension):
-            intervals[dim] = stree.persistence_intervals_in_dimension(dim)
-            # Transform alpha intervals (square root of filtration values)
-            if "alpha" in name:
-                intervals[dim] = np.sqrt(intervals[dim])
+            for dim in range(max_dimension):
+                intervals[dim] = stree.persistence_intervals_in_dimension(dim)
+                # Transform alpha intervals (square root of filtration values)
+                if "alpha" in name:
+                    intervals[dim] = np.sqrt(intervals[dim])
 
-        complexes[name] = ComplexResult(
-            stree=stree,
-            name=name,
-            num_simplices=stree.num_simplices(),
-            persistence=filtered_persistence,
-            intervals=intervals,
-            points=points,
-            processing_time_s=processing_time,
-            memory_usage_mb=memory_usage
-        )
-        
-        # print(f"{name.capitalize()} complex: {complexes[name].num_simplices} simplices "
-        #       f"(processed in {processing_time:.3f}s, memory: {format_memory(memory_usage)})")
+            complexes[name] = ComplexResult(
+                stree=stree,
+                name=name,
+                num_simplices=stree.num_simplices(),
+                persistence=filtered_persistence,
+                intervals=intervals,
+                points=points,
+                processing_time_s=processing_time,
+                memory_usage_mb=memory_usage
+            )
+            
+            # print(f"{name.capitalize()} complex: {complexes[name].num_simplices} simplices "
+            #       f"(processed in {processing_time:.3f}s, memory: {format_memory(memory_usage)})")
+                  
+        except Exception as e:
+            print(f"Failed to create {name} complex: {e}")
+            continue
 
     return complexes
 
@@ -125,20 +201,20 @@ def print_performance_table(complex_results: Dict[str, Dict[str, ComplexResult]]
     # Get complex types from the first sample (assuming all samples have same complex types)
     complex_types = list(complex_results[sample_names[0]].keys())
     
-    print("\n" + "="*120)
+    print("\n" + "="*156)
     print("PERFORMANCE SUMMARY TABLE")
-    print("="*120)
-    
+    print("="*156)
+
     # Create header
     header = f"{'Sample':<15}"
     for complex_type in complex_types:
         header += f"{complex_type.replace('_', ' ').title():<18}"
     print(header)
-    print("-" * 120)
-    
+    print("-" * 156)
+
     # Print time table
     print(f"{'PROCESSING TIME (s)':<15}")
-    print("-" * 120)
+    print("-" * 156)
     for sample in sample_names:
         row = f"{sample:<15}"
         for complex_type in complex_types:
@@ -150,7 +226,7 @@ def print_performance_table(complex_results: Dict[str, Dict[str, ComplexResult]]
     
     # Print memory table
     print(f"{'MEMORY USAGE (MB)':<15}")
-    print("-" * 120)
+    print("-" * 156)
     for sample in sample_names:
         row = f"{sample:<15}"
         for complex_type in complex_types:
@@ -158,7 +234,7 @@ def print_performance_table(complex_results: Dict[str, Dict[str, ComplexResult]]
             row += f"{memory_val:<18.3f}"
         print(row)
     
-    print("-" * 120)
+    print("-" * 156)
     
     # Print summary statistics
     print("\nSUMMARY STATISTICS:")
@@ -180,7 +256,7 @@ def print_performance_table(complex_results: Dict[str, Dict[str, ComplexResult]]
                   f"Total={total_val:.3f}, Avg={avg_val:.3f}, "
                   f"Min={min_val:.3f}, Max={max_val:.3f}")
     
-    print("="*120)
+    print("="*156)
 
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
@@ -235,7 +311,7 @@ def visualize_complexes(complexes: Dict[str, ComplexResult], title: str, mode: s
                 y=complex_result.points[:, 1], 
                 z=complex_result.points[:, 2],
                 mode='markers',
-                marker=dict(size=3, color="#4a7fb5"),
+                marker=dict(size=2.5, color="#4a7fb5"),
                 name='Points'
             ))
             #8f90d3

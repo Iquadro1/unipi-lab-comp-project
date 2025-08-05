@@ -1,5 +1,5 @@
 ve/
-datasets/
+# datasets/
 results/
 #ignore virtual environment directory
 .venv/
