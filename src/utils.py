@@ -142,7 +142,8 @@ def create_complexes(point_cloud: NDArray[np.float64], max_dimension: int, landm
     print(f"  Alpha max value: {np.sqrt(alpha_value):.6f} (alpha²={alpha_value:.6f})")
     print(f"  Cech max value: {np.sqrt(cech_value):.6f} (alpha²={cech_value:.6f})")
     print(f"  Witness max value: {np.sqrt(witness_value):.6f} (alpha²={witness_value:.6f})")
-    
+    print(f"  Strong witness max value: {np.sqrt(strong_witness_value):.6f} (alpha²={strong_witness_value:.6f})")
+
     # Create complexes with timing and memory tracking
     for name, complex_factory, stree_params, points in complex_configs:
         try:
