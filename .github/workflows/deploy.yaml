@@ -5,6 +5,9 @@ on:
       - main
     paths:
       - '**.ipynb' # Trigger this workflow only when.ipynb files are pushed
+concurrency:
+  group: pages
+  cancel-in-progress: true
 jobs:
   convert-and-deploy:
     runs-on: ubuntu-latest
