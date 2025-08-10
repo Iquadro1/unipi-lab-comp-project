@@ -16,6 +16,9 @@ class ComplexResult:
     persistence: list[tuple[int, tuple[np.float64, np.float64]]]
     intervals: Dict[int, NDArray[np.float64]]
     points: NDArray[np.float64]
+    # NEW: Store the maximum filtration value used for this complex.
+    # This is the 'true' death time for features with infinite persistence.
+    max_filtration_value: float
     # Performance metrics
     processing_time_s: float
     memory_usage_mb: float
@@ -36,117 +39,228 @@ def format_memory(mb):
     else:
         return f"{mb/1024:.3f} GB"
 
-from scipy.spatial.distance import cdist
 
-def calculate_distance(points: NDArray[np.float64]) -> tuple[NDArray[np.float64], float, float, float]:
-    
-    # Calculate pairwise distances between all points
-    print("Calculating pairwise distances...")
-    distances = cdist(points, points, metric='euclidean')
-    
-    # Set diagonal to infinity to exclude self-distances (distance from point to itself)
-    np.fill_diagonal(distances, np.inf)
-    
-    # Find minimum distance for each point to all other points
-    min_distances = np.min(distances, axis=1)
-    
-    # Calculate mean of minimum distances
-    mean_min_distance = np.mean(min_distances)
+# from scipy.spatial.distance import pdist, cdist
 
-    max_min_distance = np.max(min_distances)
+# def estimate_filtration_parameters(
+#     point_cloud: NDArray[np.float64],
+#     landmarks: NDArray[np.float64],
+#     rips_alpha_percentile: float = 5.0,
+#     witness_scale_factor: float = 1.5
+# ) -> Dict[str, float]:
+#     """
+#     Estimates optimal and consistent filtration parameters for various complexes.
 
-    median_min_distance = np.median(min_distances)
+#     - For Rips/Alpha/Cech, it uses a percentile of pairwise distances in the
+#       full point cloud to define a characteristic geometric scale.
+#     - For Witness complexes, it uses a more generous scale based on the distances
+#       between witnesses and their closest landmarks to ensure the approximation
+#       is effective.
+
+#     Args:
+#         point_cloud (NDArray[np.float64]): The full input point cloud (witnesses).
+#         landmarks (NDArray[np.float64]): The landmark point set.
+#         rips_alpha_percentile (float): The percentile of pairwise distances to use as the
+#                                      characteristic EDGE LENGTH (d or 2r) for exact complexes.
+#         witness_scale_factor (float): Multiplier for the Witness complex search radius.
+#                                       Values > 1.0 are recommended.
+
+#     Returns:
+#         Dict[str, float]: A dictionary containing the suggested max_values for each complex.
+#     """
+#     if len(point_cloud) < 2:
+#         return {
+#             "rips_edge_length": 0.1, "max_alpha_square": 0.0025,
+#             "witness_square": 0.005, "strong_witness_square": 0.005
+#         }
+
+#     print("\nAnalyzing distance distributions to set adaptive parameters...")
+
+#     # --- Step 1: Scale for Rips, Alpha, Cech based on full point cloud ---
+#     print("  -> Calculating pdist...")
+#     pairwise_distances = pdist(point_cloud)
+#     print("  -> pdist calculation complete.")
+#     max_edge_length_d = np.percentile(pairwise_distances, rips_alpha_percentile)
+#     max_radius_r = max_edge_length_d / 2.0
+
+#     rips_param = max_edge_length_d
+#     alpha_cech_param = max_radius_r**2
+
+#     print(f"  - Rips/Alpha Scale: Edge Length (d) = {rips_param:.6f}, Radius (r) = {max_radius_r:.6f}")
+
+#     # --- Step 2: More generous scale for Witness complexes ---
+#     # A good heuristic is to look at the scale of witness-to-landmark distances.
+#     # We want our search radius to be at least as large as the typical distance
+#     # from a witness to its assigned landmark.
+
+#     # Calculate distances from each witness to ALL landmarks
+#     print("  -> Calculating cdist for witness scale...")
+#     witness_landmark_dists = cdist(point_cloud, landmarks)
+#     print("  -> cdist calculation complete.")
     
-    # print(f"Mean of minimum distances: {mean_min_distance:.6f}")
-    # print(f"Standard deviation: {np.std(min_distances):.6f}")
-    # print(f"Min value: {np.min(min_distances):.6f}")
-    # print(f"Max value: {max_min_distance:.6f}")
-    # print(f"Median value: {median_min_distance:.6f}")
+#     # For each witness, find the distance to its CLOSEST landmark
+#     min_witness_landmark_dists = np.min(witness_landmark_dists, axis=1)
 
-    return min_distances, max_min_distance, mean_min_distance, median_min_distance
+#     # Use a high percentile (e.g., 75th or 90th) of these minimum distances
+#     # as a characteristic witness scale. This represents a radius that captures
+#     # most witness-landmark relationships.
+#     witness_radius_r = np.percentile(min_witness_landmark_dists, 90)
+
+#     # Apply a scaling factor to be more generous, ensuring we don't miss features.
+#     witness_search_radius = witness_radius_r * witness_scale_factor
+#     witness_param = witness_search_radius**2
+
+#     print(f"  - Witness Scale:    Search Radius = {witness_search_radius:.6f} (Derived from 90th percentile of witness-landmark distances)")
+
+#     return {
+#         "rips_edge_length": rips_param,
+#         "alpha_square": alpha_cech_param,
+#         "cech_square": alpha_cech_param,
+#         "witness_square": witness_param,
+#         "strong_witness_square": witness_param
+#     }
 
 from sklearn.neighbors import NearestNeighbors
-def estimate_max_edge_length_knn(point_cloud: NDArray[np.float64], k: int = 6, scale_factor: float = 1.0) -> float:
-    """Estimate max edge length based on k-nearest neighbor distances"""
-    
-    nbrs = NearestNeighbors(n_neighbors=k+1).fit(point_cloud)  # +1 because first neighbor is the point itself
-    distances, _ = nbrs.kneighbors(point_cloud)
-    
-    # Use mean of k-th nearest neighbor distances
-    kth_distances = distances[:, k]  # k-th neighbor (0-indexed, so k is actually k+1-th)
-    mean_kth_distance = np.mean(kth_distances)
-    
-    return max(mean_kth_distance * scale_factor, 1e-6)
+from scipy.spatial.distance import cdist
+import numpy as np
 
-def estimate_max_edge_length_knn_robust(point_cloud, k=6, percentile=75):
-    nbrs = NearestNeighbors(n_neighbors=k+1).fit(point_cloud)
-    distances, _ = nbrs.kneighbors(point_cloud)
-    kth_distances = distances[:, k]
-    return np.percentile(kth_distances, percentile)
+def estimate_filtration_parameters(
+    point_cloud: NDArray[np.float64],
+    landmarks: NDArray[np.float64],
+    nn_distance_multiplier: float = 3.0, # <--- NEW PRIMARY HEURISTIC
+    witness_scale_factor: float = 1.5
+) -> Dict[str, float]:
+    """
+    Estimates filtration parameters based on the distribution of 1st-nearest
+    neighbor distances. This is more robust to clustered sampling than pdist.
 
-def estimate_max_edge_length(point_cloud: NDArray[np.float64], scale_factor: float = 0.05) -> float:
-    """Estimate max edge length from point cloud"""
-    data_range = np.linalg.norm(np.ptp(point_cloud, axis=0))
-    return max(data_range * scale_factor, 1e-6)
+    Args:
+        point_cloud (NDArray[np.float64]): The input point cloud.
+        landmarks (NDArray[np.float64]): The landmark set.
+        nn_distance_multiplier (float): Multiplier for the characteristic scale.
+                                        A value of 2-4 is a good start. It means
+                                        "set max edge length to be 3x the average
+                                        nearest neighbor distance."
+        witness_scale_factor (float): Multiplier for the Witness complex search radius.
+    """
+
+    if len(point_cloud) < 2:
+        return {
+            "rips_edge_length": 0.1, "max_alpha_square": 0.0025,
+            "witness_square": 0.005, "strong_witness_square": 0.005
+        }
+
+    print("Analyzing nearest neighbor distance distribution to set adaptive parameters...")
+
+    # --- Step 1: Scale for Rips, Alpha, Cech using 1-NN distances ---
+    
+    # We ask for 2 neighbors because the 1st neighbor of any point is itself (distance 0).
+    nbrs = NearestNeighbors(n_neighbors=2, algorithm='auto').fit(point_cloud)
+    distances, _ = nbrs.kneighbors(point_cloud)
+
+    # distances[:, 1] is the array of distances to the 1st-closest distinct point for every point.
+    first_nn_distances = distances[:, 1]
+    
+    # Use a high percentile (e.g., 95th) of these 1-NN distances. This ignores
+    # the tiny distances in the densest parts of the clusters and focuses on the
+    # more "typical" local connections.
+    characteristic_nn_dist = np.percentile(first_nn_distances, 95)
+    
+    # The max_edge_length should be a multiple of this characteristic distance.
+    max_edge_length_d = characteristic_nn_dist * nn_distance_multiplier
+    max_radius_r = max_edge_length_d / 2.0
+    
+    rips_param = max_edge_length_d
+    alpha_cech_param = max_radius_r**2
+
+    print(f"  - Rips/Alpha Scale (based on 95th percentile of 1-NN distances):")
+    print(f"    Characteristic 1-NN dist = {characteristic_nn_dist:.6f}")
+    print(f"    Edge Length (d) = {rips_param:.6f}, Radius (r) = {max_radius_r:.6f}")
+
+    # --- Step 2: More generous scale for Witness complexes ---
+    # A good heuristic is to look at the scale of witness-to-landmark distances.
+    # We want our search radius to be at least as large as the typical distance
+    # from a witness to its assigned landmark.
+
+    # Calculate distances from each witness to ALL landmarks
+    print("  -> Calculating cdist for witness scale...")
+    witness_landmark_dists = cdist(point_cloud, landmarks)
+    print("  -> cdist calculation complete.")
+    
+    # For each witness, find the distance to its CLOSEST landmark
+    min_witness_landmark_dists = np.min(witness_landmark_dists, axis=1)
+
+    # Use a high percentile (e.g., 75th or 90th) of these minimum distances
+    # as a characteristic witness scale. This represents a radius that captures
+    # most witness-landmark relationships.
+    witness_radius_r = np.percentile(min_witness_landmark_dists, 90)
+
+    # Apply a scaling factor to be more generous, ensuring we don't miss features.
+    witness_search_radius = witness_radius_r * witness_scale_factor
+    witness_param = witness_search_radius**2
+
+    print(f"  - Witness Scale:    Search Radius = {witness_search_radius:.6f} (Derived from 90th percentile of witness-landmark distances)")
+
+    return {
+        "rips_edge_length": rips_param,
+        "alpha_square": alpha_cech_param,
+        "cech_square": alpha_cech_param,
+        "witness_square": witness_param,
+        "strong_witness_square": witness_param
+    }
 
 def create_complexes(point_cloud: NDArray[np.float64], max_dimension: int, landmarks_factor: float=0.15) -> Dict[str, ComplexResult]:
-    """Create all complexes and compute persistence with optimized parameters for each complex type"""
+    """Create all complexes and compute persistence using unified, adaptive parameters."""
     complexes = {}
-    
+
     # Prepare landmarks for witness complexes
     num_landmarks = max(1, int(len(point_cloud) * landmarks_factor))
-    landmarks = gd.subsampling.choose_n_farthest_points(points=point_cloud, nb_points=num_landmarks)
-    witness_points = np.array(landmarks)
-    
-    # Calculate adaptive parameters based on point cloud characteristics
-    _, _, _, median_min_dist = calculate_distance(point_cloud)
-    
-    max_edge_length = median_min_dist * 2.5
+    landmarks = np.array(gd.subsampling.choose_n_farthest_points(points=point_cloud, nb_points=num_landmarks))
 
-    # Define complex-specific parameters
-    rips_edge_length = max_edge_length * 1.3  # Use provided edge length
-    alpha_value = (max_edge_length * 0.6) ** 2  # Slightly smaller, squared for alpha
-    cech_value = (max_edge_length * 0.6) ** 2   # Between rips and alpha
-    witness_value = (max_edge_length * 1.2) ** 2  # More liberal for witness complexes
-    strong_witness_value = (max_edge_length * 1.3) ** 2  # More conservative for strong witness complexes   
+        # Get all parameters in one go from our new helper function
+    params = estimate_filtration_parameters(point_cloud, landmarks)
 
     # Define complex configurations with optimized parameters
     complex_configs = [
-        ("rips", lambda: gd.RipsComplex(points=point_cloud, max_edge_length=rips_edge_length), 
-         {"max_dimension": max_dimension}, point_cloud),
+        ("rips", lambda: gd.RipsComplex(points=point_cloud, max_edge_length=params["rips_edge_length"]),
+         {"max_dimension": max_dimension}, point_cloud, params["rips_edge_length"]),
+        
+        ("alpha", lambda: gd.AlphaComplex(points=point_cloud),
+         {"max_alpha_square": params["alpha_square"]}, point_cloud, np.sqrt(params["alpha_square"])),
         
         ("cech", lambda: gd.DelaunayCechComplex(points=point_cloud),
-         {"max_alpha_square": cech_value}, point_cloud),
+         {"max_alpha_square": params["cech_square"]}, point_cloud, np.sqrt(params["cech_square"])),
         
+        # For full complexes, the max_filtration_value will be determined after creation
         ("delaunay_cech", lambda: gd.DelaunayCechComplex(points=point_cloud),
-         {}, point_cloud),  # No filtration limit
+         {}, point_cloud, -1.0),
+
+        ("delaunay_alpha", lambda: gd.AlphaComplex(points=point_cloud),
+         {}, point_cloud, -1.0),
+
+        ("witness", lambda: gd.EuclideanWitnessComplex(witnesses=point_cloud, landmarks=landmarks),
+         {"max_alpha_square": 0}, landmarks, 0), # No real filtration value
+
+        ("relaxed_witness", lambda: gd.EuclideanWitnessComplex(witnesses=point_cloud, landmarks=landmarks),
+         {"max_alpha_square": params["witness_square"]}, landmarks, np.sqrt(params["witness_square"])),
         
-        ("alpha", lambda: gd.AlphaComplex(points=point_cloud), 
-         {"max_alpha_square": alpha_value}, point_cloud),
-        
-        ("delaunay_alpha", lambda: gd.AlphaComplex(points=point_cloud), 
-         {}, point_cloud),  # No filtration limit
-        
-        ("witness", lambda: gd.EuclideanWitnessComplex(witnesses=point_cloud, landmarks=landmarks), 
-         {"max_alpha_square": 0}, witness_points),  # Strict witness
-        
-        ("relaxed_witness", lambda: gd.EuclideanWitnessComplex(witnesses=point_cloud, landmarks=landmarks), 
-         {"max_alpha_square": witness_value}, witness_points),
-        
-        ("strong_witness", lambda: gd.EuclideanStrongWitnessComplex(witnesses=point_cloud, landmarks=landmarks), 
-         {"max_alpha_square": strong_witness_value}, witness_points),  # More conservative
+        ("strong_witness", lambda: gd.EuclideanStrongWitnessComplex(witnesses=point_cloud, landmarks=landmarks),
+         {"max_alpha_square": params["strong_witness_square"]}, landmarks, np.sqrt(params["strong_witness_square"])),
     ]
     
     print(f"\nUsing adaptive parameters:")
-    print(f"  Rips edge length: {rips_edge_length:.6f}")
-    print(f"  Alpha max value: {np.sqrt(alpha_value):.6f} (alpha²={alpha_value:.6f})")
-    print(f"  Cech max value: {np.sqrt(cech_value):.6f} (alpha²={cech_value:.6f})")
-    print(f"  Witness max value: {np.sqrt(witness_value):.6f} (alpha²={witness_value:.6f})")
-    print(f"  Strong witness max value: {np.sqrt(strong_witness_value):.6f} (alpha²={strong_witness_value:.6f})")
+    print(f"  Rips edge length: {params['rips_edge_length']:.6f}")
+    print(f"  Alpha max value: {np.sqrt(params['alpha_square']):.6f} (alpha²={params['alpha_square']:.6f})")
+    print(f"  Cech max value: {np.sqrt(params['cech_square']):.6f} (alpha²={params['cech_square']:.6f})")
+    print(f"  Witness max value: {np.sqrt(params['witness_square']):.6f} (alpha²={params['witness_square']:.6f})")
+    print(f"  Strong witness max value: {np.sqrt(params['strong_witness_square']):.6f} (alpha²={params['strong_witness_square']:.6f})")
 
     # Create complexes with timing and memory tracking
-    for name, complex_factory, stree_params, points in complex_configs:
+    complexes = {}
+    print(f"\nCreating complexes with adaptive parameters...")
+    for name, complex_factory, stree_params, points, max_val in complex_configs:
         try:
+            print(f" -> Processing {name.capitalize()} complex...")
             # Memory before complex creation
             mem_before = get_memory_usage()
             creation_start = time.time()
@@ -166,9 +280,18 @@ def create_complexes(point_cloud: NDArray[np.float64], max_dimension: int, landm
 
             for dim in range(max_dimension):
                 intervals[dim] = stree.persistence_intervals_in_dimension(dim)
-                # Transform alpha intervals (square root of filtration values)
-                if "alpha" in name:
+                # Transform alpha cech witness intervals (square root of filtration values)
+                if "alpha" in name or "cech" in name or "witness" in name:
                     intervals[dim] = np.sqrt(intervals[dim])
+
+            effective_max_val = max_val
+            # NEW: If max_val was not set, find the max finite death as the effective cutoff
+            if max_val < 0:
+                all_finite_deaths = [
+                    interval[1] for dim_intervals in intervals.values()
+                    for interval in dim_intervals if interval[1] != float('inf')
+                ]
+                effective_max_val = max(all_finite_deaths) if all_finite_deaths else 1.0
 
             complexes[name] = ComplexResult(
                 stree=stree,
@@ -177,13 +300,14 @@ def create_complexes(point_cloud: NDArray[np.float64], max_dimension: int, landm
                 persistence=filtered_persistence,
                 intervals=intervals,
                 points=points,
+                max_filtration_value=effective_max_val,
                 processing_time_s=processing_time,
                 memory_usage_mb=memory_usage
             )
-            
-            # print(f"{name.capitalize()} complex: {complexes[name].num_simplices} simplices "
-            #       f"(processed in {processing_time:.3f}s, memory: {format_memory(memory_usage)})")
-                  
+
+            print(f" -> {name.capitalize()} complex: {complexes[name].num_simplices} simplices "
+                  f"(processed in {processing_time:.3f}s, memory: {format_memory(memory_usage)})")
+
         except Exception as e:
             print(f"Failed to create {name} complex: {e}")
             continue
