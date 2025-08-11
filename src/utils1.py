@@ -127,7 +127,7 @@ import numpy as np
 def estimate_filtration_parameters(
     point_cloud: NDArray[np.float64],
     landmarks: NDArray[np.float64],
-    nn_distance_multiplier: float = 3.0, # <--- NEW PRIMARY HEURISTIC
+    nn_distance_multiplier: float = 3.0,
     witness_scale_factor: float = 1.5
 ) -> Dict[str, float]:
     """
@@ -209,6 +209,68 @@ def estimate_filtration_parameters(
         "strong_witness_square": witness_param
     }
 
+# def estimate_filtration_parameters(
+#     point_cloud: NDArray[np.float64],
+#     landmarks: NDArray[np.float64],
+#     rips_nn_multiplier: float = 3.5,
+#     alpha_nn_multiplier: float = 15.0,
+#     witness_scale_factor: float = 2.3
+# ) -> Dict[str, float]:
+#     """
+#     Estimates filtration parameters with separate controls for Rips vs. Alpha/Cech.
+
+#     Args:
+#         point_cloud (NDArray[np.float64]): The input point cloud.
+#         landmarks (NDArray[np.float64]): The landmark set.
+#         rips_nn_multiplier (float): Multiplier for the Rips complex. Kept small
+#                                     to avoid memory explosion.
+#         alpha_nn_multiplier (float): Multiplier for Alpha/Cech complexes. Can be larger.
+#         witness_scale_factor (float): Multiplier for the Witness complex search radius.
+#     """
+
+#     if len(point_cloud) < 2:
+#         return {
+#             "rips_edge_length": 0.1, "max_alpha_square": 0.0025,
+#             "witness_square": 0.005, "strong_witness_square": 0.005
+#         }
+
+#     print("Analyzing nearest neighbor distance distribution to set adaptive parameters...")
+
+#     # --- Step 1: Calculate characteristic distance from 1-NN ---
+#     nbrs = NearestNeighbors(n_neighbors=2, algorithm='auto').fit(point_cloud)
+#     distances, _ = nbrs.kneighbors(point_cloud)
+#     first_nn_distances = distances[:, 1]
+#     characteristic_nn_dist = np.percentile(first_nn_distances, 95)
+#     print(f"  - Characteristic 1-NN dist (95th percentile) = {characteristic_nn_dist:.6f}")
+
+#     # --- Step 2: Calculate parameter for Rips (conservative) ---
+#     rips_max_edge_length = characteristic_nn_dist * rips_nn_multiplier
+#     print(f"  - Rips Scale: Max Edge Length = {rips_max_edge_length:.6f} (using multiplier {rips_nn_multiplier})")
+    
+#     # --- Step 3: Calculate parameter for Alpha/Cech (more aggressive) ---
+#     alpha_max_edge_length = characteristic_nn_dist * alpha_nn_multiplier
+#     alpha_max_radius = alpha_max_edge_length / 2.0
+#     alpha_cech_param = alpha_max_radius**2
+#     print(f"  - Alpha/Cech Scale: Max Radius = {alpha_max_radius:.6f} (using multiplier {alpha_nn_multiplier})")
+
+#     # --- Step 4: Scale for Witness complexes ---
+#     print("  -> Calculating cdist for witness scale...")
+#     witness_landmark_dists = cdist(point_cloud, landmarks)
+#     print("  -> cdist calculation complete.")
+#     min_witness_landmark_dists = np.min(witness_landmark_dists, axis=1)
+#     witness_radius_r = np.percentile(min_witness_landmark_dists, 90)
+#     witness_search_radius = witness_radius_r * witness_scale_factor
+#     witness_param = witness_search_radius**2
+#     print(f"  - Witness Scale: Search Radius = {witness_search_radius:.6f} (using factor {witness_scale_factor})")
+
+#     return {
+#         "rips_edge_length": rips_max_edge_length, # Use the conservative value
+#         "alpha_square": alpha_cech_param,         # Use the aggressive value
+#         "cech_square": alpha_cech_param,          # Use the aggressive value
+#         "witness_square": witness_param,
+#         "strong_witness_square": witness_param
+#     }
+
 def create_complexes(point_cloud: NDArray[np.float64], max_dimension: int, landmarks_factor: float=0.15) -> Dict[str, ComplexResult]:
     """Create all complexes and compute persistence using unified, adaptive parameters."""
     complexes = {}
@@ -217,7 +279,7 @@ def create_complexes(point_cloud: NDArray[np.float64], max_dimension: int, landm
     num_landmarks = max(1, int(len(point_cloud) * landmarks_factor))
     landmarks = np.array(gd.subsampling.choose_n_farthest_points(points=point_cloud, nb_points=num_landmarks))
 
-        # Get all parameters in one go from our new helper function
+        # Get all parameters in one go
     params = estimate_filtration_parameters(point_cloud, landmarks)
 
     # Define complex configurations with optimized parameters
@@ -285,7 +347,7 @@ def create_complexes(point_cloud: NDArray[np.float64], max_dimension: int, landm
                     intervals[dim] = np.sqrt(intervals[dim])
 
             effective_max_val = max_val
-            # NEW: If max_val was not set, find the max finite death as the effective cutoff
+            # If max_val was not set, find the max finite death as the effective cutoff
             if max_val < 0:
                 all_finite_deaths = [
                     interval[1] for dim_intervals in intervals.values()
@@ -439,7 +501,6 @@ def visualize_complexes(complexes: Dict[str, ComplexResult], title: str, mode: s
                 marker=dict(size=2.5, color="#4a7fb5"),
                 name='Points'
             ))
-            #8f90d3
             
             # Add triangular mesh if triangles exist
             if len(triangles) > 0:
@@ -458,7 +519,6 @@ def visualize_complexes(complexes: Dict[str, ComplexResult], title: str, mode: s
                 showlegend=True
                 # showscale=False
                 ))
-            ##bbbeeb
             
             # Add edges
             if len(edges) > 0:
@@ -478,8 +538,7 @@ def visualize_complexes(complexes: Dict[str, ComplexResult], title: str, mode: s
                     line=dict(color='#0e456a', width=1.5),
                     name='Edges'
                 ))
-            ##6b6ca3
-            # '#1d6fa8'
+
             fig.update_layout(
                 title=f"{complex_result.name.upper()} Complex Representation of {title}",
                 scene=dict(
@@ -524,11 +583,6 @@ def compute_bottleneck_distances(complexes: Dict[str, ComplexResult], max_dimens
 
     # Compute max distances across dimensions for each pair of complexes
     max_distances = np.max(distance_matrices, axis=0)
-    # for i, name1 in enumerate(complex_names):
-    #     for j, name2 in enumerate(complex_names[:i]):
-    #         label = f"{name1}-{name2}"
-    #         max_distance = max_distances[i, j]
-    #         results[label] = max_distance
     
     # Print distance matrix as a table
     print("\n--- MAX BOTTLENECK DISTANCE MATRIX ---")

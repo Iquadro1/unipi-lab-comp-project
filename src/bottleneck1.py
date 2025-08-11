@@ -203,7 +203,7 @@ def visualize_bottleneck_distances(mds_results: Dict[int, NDArray[np.float64]], 
     n_complexes = mds_results[0].shape[0]
 
     # Create a color array for consistent coloring across subplots
-    colors = plt.cm.viridis(np.linspace(0, 1, n_complexes))
+    colors = plt.cm.viridis_r(np.linspace(0, 1, n_complexes))
 
     for dim in range(max_dimension):
         ax = axes[dim]
@@ -475,7 +475,7 @@ def plot_convergence_sequences(
     ]
 
     # Create a color array for consistent coloring with visualize_bottleneck_distances
-    colors = plt.cm.viridis(np.linspace(0, 1, len(complex_types)))
+    colors = plt.cm.viridis_r(np.linspace(0, 1, len(complex_types)))
 
     fig, axes = plt.subplots(1, max_dimension, figsize=(7 * max_dimension, 6), sharey=log_scale)
     if max_dimension == 1:
@@ -486,6 +486,11 @@ def plot_convergence_sequences(
         for i, complex_type in enumerate(complex_types):
             distances = convergence_data[complex_type].get(dim, [])
             if len(distances) == len(x_labels):
+                # Handle zero values for log scale
+                if log_scale:
+                    # Add small epsilon to avoid log(0)
+                    distances = [max(d, 1e-10) for d in distances]
+                
                 ax.plot(x_labels, distances, marker='o', linestyle='-', 
                        color=colors[i], label=complex_type.replace('_', ' ').title())
 
