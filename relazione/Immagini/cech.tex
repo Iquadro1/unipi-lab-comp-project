@@ -1,0 +1,94 @@
+\begin{figure}[!ht]
+\centering
+\scalebox{0.8}{ % Scale to 80%
+\begin{tikzpicture}
+
+% --- Part 1: C(0) ---
+\begin{scope}
+    % A set of 7 points (0-simplices)
+    \node[dot] at (0.2, 0.8) {};
+    \node[dot] at (1.0, 0.4) {};
+    \node[dot] at (1.5, 1.5) {};
+    \node[dot] at (2.1, 3.0) {};
+    \node[dot] at (1.8, 3.8) {};
+    \node[dot] at (0.5, 4.4) {};
+    
+    % Label for C(0)
+    \node at (1.2, -0.8) {$\check{C}_0$};
+\end{scope}
+
+% --- Subset Symbol 1 ---
+% \node at (4, 2.5) {$\subseteq$};
+
+% --- Part 2: C(1) ---
+\begin{scope}[xshift=5cm]
+    \def\radius{0.65}
+    
+    % Define points as named nodes
+    \coordinate (p1) at (0.2, 0.8); % Bottom component, point 1
+    \coordinate (p2) at (1.0, 0.4); % Bottom component, point 2 (center)
+    \coordinate (p3) at (1.5, 1.5); % Bottom component, point 3
+    \coordinate (p4) at (2.1, 3.0); % Middle component, point 1
+    \coordinate (p5) at (1.8, 3.8); % Middle component, point 2
+    \coordinate (p6) at (0.5, 4.4); % Top isolated point
+
+    % Draw circles around each point
+    \foreach \i in {1,...,6} {
+        \fill[lightgray, opacity=0.5] (p\i) circle (\radius);
+    }
+
+    \node[dot] at (p1) {};
+    \node[dot] at (p2) {};
+    \node[dot] at (p3) {};
+    \node[dot] at (p4) {};
+    \node[dot] at (p5) {};
+    \node[dot] at (p6) {};
+
+    % Draw edges (1-simplices)
+    \draw (p1) -- (p2) -- (p3);
+    \draw (p4) -- (p5);
+    
+    % Label for C(1)
+    \node at (1.6, -0.8) {$\check{C}_1$};
+\end{scope}
+
+% --- Subset Symbol 2 ---
+% \node at (9, 2.5) {$\subseteq$};
+
+% --- Part 3: C(2) ---
+\begin{scope}[xshift=10cm]
+    \def\radius{0.9}
+    
+    % Define coordinates for the 7 points
+    \coordinate (v1) at (0.2, 0.8) {}; % Bottom component, point 1
+    \coordinate (v2) at (1.0, 0.4) {}; % Bottom component, point 2 (center)
+    \coordinate (v3) at (1.5, 1.5) {}; % Bottom component, point 3
+    \coordinate (c1) at (2.1, 3.0) {}; % Middle component, point 1
+    \coordinate (c2) at (1.8, 3.8) {}; % Middle component, point 2
+    \coordinate (c3) at (0.5, 4.4) {}; % Top isolated point
+    
+    % Fill the triangle (2-simplex) - drawn first to be in the background
+    \fill[darkgray] (v1) -- (v2) -- (v3) -- cycle;
+    
+    % Draw circles around each point
+    \foreach \p in {c1, c2, c3, v1, v2, v3} {
+        \fill[lightgray, opacity=0.5] (\p) circle (\radius);
+    }
+    
+    % Draw all edges (1-simplices)
+    \draw (v3) -- (c1) -- (c2) -- (c3);
+    \draw (v1) -- (v2) -- (v3) -- cycle;
+    
+    % Draw the points (0-simplices) - drawn last to be on top
+    \foreach \p in {c1, c2, c3, v1, v2, v3} {
+        \node[dot] at (\p) {};
+    }
+    
+    % Label for C(2)
+    \node at (1.8, -0.8) {$\check{C}_2$};
+\end{scope}
+
+\end{tikzpicture}
+} % End scalebox
+\caption{Esempio di un complesso di \v{C}ech, con gli $0$-simplessi (punti) in $\check{C}_0$, gli $1$-simplessi (archi) che si aggiungono in $\check{C}_1$, e un $2$-simplesso (triangolo) in $\check{C}_2$.}
+\end{figure}

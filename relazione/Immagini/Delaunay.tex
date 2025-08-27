@@ -1,0 +1,181 @@
+\def\biglen{20cm} % playing role of infinity (should be < .25\maxdimen)
+
+\def\n{5} % number of random points
+\def\maxxy{2} % random points are in [-\maxxy,\maxxy]x[-\maxxy,\maxxy]
+
+\begin{figure}[!ht]
+    \centering
+    \begin{tikzpicture}
+    % generate random points
+    \pgfmathsetseed{1908} % init random with the year Voronoi published his paper ;)
+    % define explicit list of points
+    \def\pts{
+        (-1.1483,1.74945),
+        (0.8,-0.2),
+        (1.5,-0.79076),
+        (0.87991,-1.14056),
+        (-0.9,-0.9)
+    }
+    % draw the points and their cells
+    \xintForpair #1#2 in \pts \do{
+        \edef\pta{#1,#2}
+        \begin{scope}
+        \xintForpair \#3#4 in \pts \do{
+            \edef\ptb{#3,#4}
+            \ifx\pta\ptb\relax % check if (#1,#2) == (#3,#4) ?
+            \tikzset{myclip/.style={}}
+            \else
+            \tikzset{myclip/.style={clip}}
+            \fi
+            \path[myclip] (#3,#4) to[half plane] (#1,#2);
+        }
+        \clip (-\maxxy,-\maxxy) rectangle (\maxxy,\maxxy); % last clip
+        % \pgfmathsetmacro{\randhue}{rnd}
+        % \definecolor{randcolor}{hsb}{\randhue,.5,1}
+        \fill[lightgray] (#1,#2) circle (4*\biglen); % fill the cell with random color
+        \node[dot, very thick] at (#1,#2) {}; % and draw the point
+        \end{scope}
+    }
+    \coordinate (p1) at (-1.1483,1.74945);
+    \coordinate (p3) at (1.5,-0.79076);
+    \coordinate (p5) at (-0.9,-0.9);
+    \coordinate (p4) at (0.87991,-1.14056);
+    \coordinate (p2) at (0.8,-0.2);
+
+    \fill[darkgray, opacity=0.3] (p1) -- (p2) -- (p5) -- cycle;
+    \fill[darkgray, opacity=0.3] (p2) -- (p3) -- (p4) -- cycle;
+    \fill[darkgray, opacity=0.3] (p2) -- (p4) -- (p5) -- cycle;
+
+    \draw[thick] (p1) -- (p2) -- (p5) -- cycle;
+    \draw[thick] (p2) -- (p3) -- (p4) -- cycle;
+    \draw[thick] (p2) -- (p4) -- (p5);
+
+    \pgfresetboundingbox
+    \draw[opacity=0.3] (-\maxxy,-\maxxy) rectangle (\maxxy,\maxxy);
+    \end{tikzpicture}
+    \caption{\centering Esempio di triangolazione di Delaunay con decomposizione di Voronoi}
+\end{figure}
+
+% \begin{figure}[!h]
+% \centering
+% \begin{tikzpicture}
+%     % Define a custom style for the points
+%     \tikzset{mypoint/.style={circle,draw,fill=#1,minimum size=6pt,inner sep=0pt}}
+
+%     \coordinate (p1) at (-1.1483,1.74945); % blue
+%     \coordinate (p2) at (1.20776,-0.79076); % red
+%     \coordinate (p3) at (-0.15695,-1.45227); % green
+%     \coordinate (p4) at (0.87991,-1.14056); % magenta
+%     \coordinate (p5) at (0.93376,-0.30605); % yellow
+%     \coordinate (p6) at (-0.40324,-0.29198); % orange
+%     \coordinate (p7) at (0.60858,1.60165); % cyan
+%     \coordinate (p8) at (-1.50703,1.50096); % purple
+%     \coordinate (p9) at (1.15723,-1.46779); % brown
+%     \coordinate (p10) at (0.38045,1.60767); % gray
+%     \coordinate (p11) at (0.24359,0.41884); % teal
+%     \coordinate (p12) at (0.59473,-1.54881); % black
+%     \coordinate (p13) at (-0.91298,0.36829); % lightgray
+%     \coordinate (p14) at (-0.78702,-0.39566); % pink
+%     \coordinate (p15) at (-0.24878,-0.26437); % violet
+%     \coordinate (p16) at (-1.00087,-0.72226); % red!70!black
+%     \coordinate (p17) at (0.75883,0.09967); % blue!50!cyan
+%     \coordinate (p18) at (-0.9729,1.36635); % magenta!70!black
+%     \coordinate (p19) at (-0.21243,0.78523); % olive
+%     \coordinate (p20) at (-1.00911,-0.51881); % purple!70!black
+%     \coordinate (p21) at (-0.27223,-0.6778); % lime
+%     \coordinate (p22) at (-0.29692,-1.44427); % darkgray
+%     \coordinate (p23) at (-1.63387,1.26938); % violet!80!black
+
+%     % Draw the points with different colors
+%     \node[mypoint=blue] at (p1) {};
+%     \node[mypoint=red] at (p2) {};
+%     \node[mypoint=green!70!black] at (p3) {};
+%     \node[mypoint=magenta] at (p4) {};
+%     \node[mypoint=yellow!80!orange] at (p5) {};
+%     \node[mypoint=orange] at (p6) {};
+%     \node[mypoint=cyan] at (p7) {};
+%     \node[mypoint=purple] at (p8) {};
+%     \node[mypoint=brown] at (p9) {};
+%     \node[mypoint=gray] at (p10) {};
+%     \node[mypoint=teal] at (p11) {};
+%     \node[mypoint=black] at (p12) {};
+%     \node[mypoint=lightgray] at (p13) {};
+%     \node[mypoint=pink] at (p14) {};
+%     \node[mypoint=violet] at (p15) {};
+%     \node[mypoint=red!70!black] at (p16) {};
+%     \node[mypoint=blue!50!cyan] at (p17) {};
+%     \node[mypoint=magenta!70!black] at (p18) {};
+%     \node[mypoint=olive] at (p19) {};
+%     \node[mypoint=purple!70!black] at (p20) {};
+%     \node[mypoint=lime] at (p21) {};
+%     \node[mypoint=darkgray] at (p22) {};
+%     \node[mypoint=violet!80!black] at (p23) {};
+
+%     \draw (p1) -- (p8);
+%     \draw (p1) -- (p18);
+%     \draw (p1) -- (p10);
+%     \draw (p2) -- (p5);
+%     \draw (p2) -- (p9);
+%     \draw (p2) -- (p4);
+%     \draw (p3) -- (p12);
+%     \draw (p3) -- (p22);
+%     \draw (p3) -- (p21);
+%     \draw (p3) -- (p4);
+%     \draw (p4) -- (p9);
+%     \draw (p4) -(p12);
+    
+%     % Optionally, draw a bounding box for reference
+%     \draw[opacity=0.3] (-2,-2) rectangle (2,2);
+% \end{tikzpicture}
+% \caption{Distribuzione dei punti colorati distintamente.}
+% \end{figure}
+
+% \def\biglen{20cm} % playing role of infinity (should be < .25\maxdimen)
+
+% \def\n{5} % number of points
+% \def\maxxy{2} % points are in [-\maxxy,\maxxy]x[-\maxxy,\maxxy]
+
+% \begin{figure}[!h]
+% \centering
+%     \begin{tikzpicture}
+%     % Define the five given points
+%     \coordinate (p1) at (-1.1483,1.74945);
+%     \coordinate (p2) at (0.93376,-0.30605);
+%     \coordinate (p3) at (1.20776,-0.79076);
+%     \coordinate (p4) at (0.87991,-1.14056);
+%     \coordinate (p5) at (-0.15695,-1.45227);
+
+%     % List of points for iteration
+%     \def\pts{{(-1.1483,1.74945)}, {(0.93376,-0.30605)}, {(1.20776,-0.79076)}, {(0.87991,-1.14056)}, {(-0.15695,-1.45227)}}
+
+%     % Draw the Voronoi cells with clipping
+%     \foreach \i/\name in {1/p1,2/p2,3/p3,4/p4,5/p5} {
+%         \pgfmathtruncatemacro{\imax}{5}
+%         \begin{scope}
+%         \foreach \j/\other in {1/p1,2/p2,3/p3,4/p4,5/p5} {
+%             \ifnum\i=\j
+%                 % skip self
+%             \else
+%                 \path[clip] (\other) -- ($(\other)!2!(\name)$) -- ($(\name)!2!(\other)$) -- cycle;
+%             \fi
+%         }
+%         \clip (-\maxxy,-\maxxy) rectangle (\maxxy,\maxxy); % bounding box
+%         \fill[lightgray,opacity=0.5] (\name) circle (4*\biglen); % fill the cell
+%         \end{scope}
+%     }
+
+%     % Draw the points
+%     \foreach \pt in {p1,p2,p3,p4,p5} {
+%         \fill[black] (\pt) circle (2pt);
+%     }
+
+%     % Draw the Delaunay triangulation edges
+%     \draw (p1) -- (p2) -- (p5) -- cycle;
+%     \draw (p2) -- (p3) -- (p4) -- cycle;
+%     \draw (p2) -- (p4) -- (p5);
+
+%     \pgfresetboundingbox
+%     \draw[opacity=0.3] (-\maxxy,-\maxxy) rectangle (\maxxy,\maxxy);
+%     \end{tikzpicture}
+%     \caption{Delaunay triangulation and Voronoi cells for five given points.}
+% \end{figure}

@@ -4,8 +4,16 @@
 \contentsline {section}{\numberline {2}Basi di Topologia Algebrica}{1}{section.2}%
 \contentsline {subsection}{\numberline {2.1}Complessi Simpliciali}{1}{subsection.2.1}%
 \contentsline {subsection}{\numberline {2.2}Omologia}{2}{subsection.2.2}%
-\contentsline {subsection}{\numberline {2.3}Mappe indotte su gruppi di omologia}{3}{subsection.2.3}%
-\contentsline {section}{\numberline {3}Omologia Persistente e Algoritmo di Calcolo}{4}{section.3}%
-\contentsline {section}{\numberline {4}Complessi Simpliciali}{5}{section.4}%
-\contentsline {section}{\numberline {5}Sperimentazione e Confronto}{5}{section.5}%
-\contentsline {section}{\numberline {6}Conclusioni}{5}{section.6}%
+\contentsline {subsection}{\numberline {2.3}Mappe indotte su gruppi di omologia}{4}{subsection.2.3}%
+\contentsline {section}{\numberline {3}Omologia Persistente e Algoritmo di Calcolo}{5}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Omologia Persistente}{5}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Barcode}{6}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Algoritmo di Calcolo dell'Omologia Persistente}{6}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Diagrammi di Persistenza e Distanza Bottleneck}{8}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Complessi Simpliciali Filtrati}{9}{section.4}%
+\contentsline {section}{\numberline {5}Sperimentazione}{13}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Estrazione dei Campioni}{13}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Generazione dei Complessi}{14}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Analisi delle Prestazioni}{15}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Confronti}{16}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}Analisi della Convergenza}{17}{subsection.5.5}%

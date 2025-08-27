@@ -1,0 +1,90 @@
+\begin{figure}[!ht]
+\centering
+
+% Define the point coordinates in a reusable command to avoid duplication
+\newcommand{\definepointcloud}{
+    \coordinate (v1) at (2.7, 3.7);
+    \coordinate (v2) at (1.3, 4.3);
+    \coordinate (v3) at (1.5, 2.8);
+    \coordinate (v4) at (1.8, 1.3);
+    \coordinate (v5) at (1.0, 0.1);
+    \coordinate (v6) at (2.0, -0.1);
+    \coordinate (v7) at (2.8, 0.4);
+}
+
+% % Define styles for recurring elements to make the code cleaner
+% \tikzset{
+%     point/.style={fill, circle, inner sep=1.2pt},
+%     ball/.style={draw=black!60, dashed, fill=blue!20, fill opacity=0.5},
+%     simplex/.style={fill=violet},
+%     edge/.style={thick}
+% }
+
+% Use minipages to place the two diagrams next to each other
+\begin{minipage}{0.49\textwidth}
+\centering
+\begin{tikzpicture}[scale=0.9]
+    \definepointcloud
+    \def\rad{0.8}
+
+    % --- Left Diagram: The Cech Complex ---
+    % Draw the balls around each point first, so they are in the background
+    \foreach \i in {1,...,7} {
+        \fill[lightgray, opacity=0.5] (v\i) circle (\rad);
+    }
+    
+    % Fill the 2-simplices (triangles)
+    \fill[darkgray, opacity=0.3] (v4)--(v5)--(v7)--cycle;
+    \fill[darkgray, opacity=0.3] (v5)--(v6)--(v7)--cycle;
+
+    % Draw the 1-skeleton (edges)
+    \draw[thick] (v1)--(v2)--(v3)--(v1); % Top triangle edges
+    \draw[thick] (v3)--(v4); % Connector edge
+    \draw[thick] (v4)--(v5); \draw[thick] (v4)--(v7); % Bottom part edges
+    \draw[thick] (v5)--(v6); \draw[thick] (v5)--(v7);
+    \draw[thick] (v6)--(v7);
+    
+    % Draw the points (vertices) on top
+    \foreach \i in {1,...,7} {
+        \node[dot] at (v\i) {};
+    }
+
+    % Add the annotation for the radius epsilon
+    \path (v1) ++(30:\rad) coordinate (A);
+\end{tikzpicture}
+\end{minipage}% <--- The '%' is important to prevent an unwanted space
+\begin{minipage}{0.49\textwidth}
+\centering
+\begin{tikzpicture}[scale=0.9]
+    \definepointcloud
+    \def\rad{0.8}
+
+    % --- Right Diagram: The Vietoris-Rips Complex ---
+    % Draw the balls (same as before)
+    \foreach \i in {1,...,7} {
+        \fill[lightgray, opacity=0.5] (v\i) circle (\rad);
+    }
+    
+    % Fill the simplices. The Rips complex has more.
+    \fill[darkgray, opacity=0.3] (v1)--(v2)--(v3)--cycle; % Top 2-darkgray
+    \fill[darkgray, opacity=0.3] (v4)--(v5)--(v6)--(v7)--cycle; % Bottom 3-simplex (tetrahedron)
+
+    % Draw the edges
+    \draw[thick] (v1)--(v2)--(v3)--(v1);
+    \draw[thick] (v3)--(v4);
+    % The bottom part is a complete graph K4 (all 6 edges)
+    \draw[thick] (v4)--(v5); \draw[thick] (v4)--(v7);
+    \draw[thick] (v5)--(v6); \draw[thick] (v5)--(v7);
+    \draw[thick] (v6)--(v7);
+    \draw[thick, dashed] (v4)--(v6); % The 6th edge, dashed for 3D perspective
+    
+    % Draw the points on top
+    \foreach \i in {1,...,7} {
+        \node[dot] at (v\i) {};
+    }
+\end{tikzpicture}
+\end{minipage}
+
+\caption{Il complesso di \v{C}ech $\check{C}_\epsilon$ (sinistra) e il complesso di Vietoris-Rips $VR_{2\epsilon}$ (destra) di una nuvola di punti finita nel piano $\mathbb{R}^2$. La parte inferiore di $\check{C}_\epsilon$ è l'unione di due triangoli adiacenti, mentre la parte inferiore di $VR_{2\epsilon}$ è un tetraedro.}
+\label{fig:cech-rips}
+\end{figure}

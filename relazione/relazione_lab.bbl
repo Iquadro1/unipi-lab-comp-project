@@ -1,0 +1,22 @@
+\begin{thebibliography}{1}
+
+\bibitem{Cohen}
+{\sc D.~Cohen-Steiner, H.~Edelsbrunner, and J.~Harer}, {\em Stability of
+  persistence diagrams}, Discrete \& Computational Geometry - DCG, 37 (2005),
+  pp.~263--271.
+
+\bibitem{Edelsbrunner}
+{\sc H.~Edelsbrunner and J.~Harer}, {\em Computational Topology: An
+  Introduction}, American Mathematical Society, 01 2010.
+
+\bibitem{StanfordRepository}
+{\sc {Stanford University Computer Graphics Laboratory}}, {\em The stanford 3d
+  scanning repository}.
+\newblock Available at \url{https://graphics.stanford.edu/data/3Dscanrep}.
+\newblock Accessed: \today.
+
+\bibitem{Zomorodian}
+{\sc A.~Zomorodian and G.~Carlsson}, {\em Computing persistent homology},
+  Discrete and Computational Geometry, 33 (2005), pp.~249--274.
+
+\end{thebibliography}

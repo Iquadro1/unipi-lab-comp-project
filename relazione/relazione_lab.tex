@@ -1,8 +1,9 @@
-\documentclass[a4paper]{article}
+\documentclass[a4paper, 12pt]{article}
 
 \usepackage[italian]{babel}
+% \usepackage{geometry}
 
-\usepackage[top=1in, bottom=1.3in, left=1.2in, right=1.3in]{geometry}
+% \usepackage[top=1in, bottom=1.3in, left=1.2in, right=1.3in]{geometry}
 
 \pagestyle{plain}
 
@@ -18,7 +19,43 @@
 \usepackage{faktor}
 \usepackage{tikz-cd}
 % \setlist{nosep}
+\usepackage{import}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 
+\usepackage{xinttools} % for the \xintFor***
+\usepackage{tikz}
+\usetikzlibrary{decorations.pathmorphing, arrows.meta, decorations.markings, calc}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{changepage}
+\usepackage{float}
+
+% Define custom colors for TikZ
+\definecolor{lightpink}{RGB}{254, 222, 222}
+\definecolor{darkpink}{RGB}{239, 138, 138}
+\definecolor{highlight}{RGB}{221, 204, 255}
+\definecolor{lightblue}{RGB}{173, 216, 230}
+
+\tikzset{
+    % Style for vertices
+    dot/.style={circle, fill=black, inner sep=1.2pt},
+    gray_dot/.style={circle, fill=gray, inner sep=1.2pt},
+    % Style for text labels below each panel
+    panel_label/.style={font=\normalsize, yshift=-0.15cm},
+        midarrow/.style={
+        decoration={
+        markings,
+        mark=at position 0.57 with {\arrow{Latex}}
+        },
+    postaction={decorate}
+        },
+    half plane/.style={ to path={
+        ($(\tikztostart)!.5!(\tikztotarget)!#1!(\tikztotarget)!\biglen!90:(\tikztotarget)$)
+        -- ($(\tikztostart)!.5!(\tikztotarget)!#1!(\tikztotarget)!\biglen!-90:(\tikztotarget)$)
+        -- ([turn]0,2*\biglen) -- ([turn]0,2*\biglen) -- cycle}},
+    half plane/.default={1pt}
+}
 
 \newtheorem{theorem}{Teorema}[section]
 \newtheorem{corollary}{Corollario}[theorem]
@@ -28,9 +65,14 @@
 \theoremstyle{definition}
 \newtheorem{definition}{Definizione}[section]
 \newtheorem{example}{Esempio}[section]
+\newtheorem{examplebox}{Esempio}[section]
+\usepackage{mdframed}
+\surroundwithmdframed{examplebox}
 
 \theoremstyle{remark}
 \newtheorem{remark}[theorem]{Osservazione}
+
+\floatname{algorithm}{Algoritmo}
 
 \begin{document}
 \vspace*{3.5cm}
@@ -79,47 +121,90 @@ Isabella Inuso \hfill\\
 \section{Introduzione}
 L'analisi topologica dei dati è un campo in rapida crescita che si occupa di studiare le proprietà topologiche dei dati attraverso strumenti matematici. In questo contesto, i complessi simpliciali sono strutture fondamentali che permettono di rappresentare e analizzare la forma dei dati in modo efficace. Questa relazione si propone di confrontare diversi tipi di complessi simpliciali, come i complessi di Vietoris-Rips, i complessi di Čech, i complessi alpha e i complessi witness, comparando le omologie persistenti ottenute a partire dagli stessi dati passando attraverso i vari complessi.
 
-\section{Basi di Topologia Algebrica}
-Cominciamo con una breve introduzione ai concetti fondamentali della topologia algebrica che ci serviranno per comprendere l'omologia persistente.
+\section{Basi di Topologia Algebrica}\label{sec:topologia-algebrica}
+Supponiamo di avere a disposizione dati che si trovano in uno spazio metrico, come ad esempio un sottoinsieme dello spazio euclideo dotato della distanza indotta. In molte situazioni, non siamo interessati alla geometria precisa di questi spazi, ma cerchiamo piuttosto di comprendere alcune caratteristiche fondamentali, come il numero di componenti connesse o l'esistenza di buchi e cavità. La topologia algebrica cattura queste caratteristiche di base contandole oppure associando ad esse spazi vettoriali o strutture algebriche più sofisticate. In questo contesto, ci interessiamo all'omologia, che associa uno spazio vettoriale $H_i(X)$ a uno spazio $X$ per ogni numero naturale $i \in \{0, 1, 2, \ldots\}$. La dimensione di $H_0(X)$ conta il numero di componenti connesse di $X$, la dimensione di $H_1(X)$ rappresenta il numero di buchi, e la dimensione di $H_2(X)$ conta il numero di cavità. Una proprietà importante di queste strutture algebriche è la loro robustezza, poiché non cambiano quando lo spazio sottostante viene trasformato mediante piegature, stiramenti o altre deformazioni. In termini tecnici, sono invarianti omotopiche.
 
+Il calcolo dell'omologia di spazi topologici arbitrari può risultare molto difficile. Pertanto, approssimiamo i nostri spazi mediante strutture combinatoriali chiamate "complessi simpliciali", per i quali l'omologia può essere calcolata facilmente mediante algoritmi. Spesso, infatti, non disponiamo nemmeno dello spazio $X$, ma possediamo soltanto un insieme campione discreto $S$ dal quale costruire un complesso simpliciale seguendo una delle procedure descritte nelle sezioni successive.
+
+% Quando lavoriamo con dati distribuiti in uno spazio metrico, come per esempio un sottoinsieme dello spazio euclideo dotato di una funzione distanza, spesso non siamo interessati alla geometria precisa di questi spazi. Il nostro obiettivo è piuttosto quello di estrarre e analizzare caratteristiche topologiche fondamentali: il numero di componenti connesse, la presenza di buchi, cavità o strutture di dimensioni superiori.
+
+% La topologia algebrica fornisce gli strumenti matematici per catturare e quantificare queste proprietà strutturali. Il concetto che ci interessa è quello di \textbf{omologia}, che associa a ogni spazio topologico $X$ una famiglia di spazi vettoriali $\{H_i(X)\}_{i \geq 0}$, dove ciascun indice $i$ corrisponde a una diversa dimensione topologica:
+
+% \begin{itemize}
+%     \item $\dim H_0(X)$ enumera le componenti connesse per cammini
+%     \item $\dim H_1(X)$ conta i buchi unidimensionali (cicli)  
+%     \item $\dim H_2(X)$ rileva le cavità bidimensionali (vuoti)
+%     \item $\dim H_i(X)$ per $i > 2$ identifica strutture topologiche di dimensioni superiori
+% \end{itemize}
+
+% Una proprietà cruciale di questi invarianti algebrici è la loro \textbf{stabilità sotto deformazioni continue}. Gli spazi vettoriali di omologia rimangono invariati quando lo spazio sottostante subisce trasformazioni topologiche come stiramenti, piegature o altre deformazioni che preservano la continuità—una caratteristica nota come \textbf{invarianza omotopica}.
+
+% Il calcolo diretto dell'omologia per spazi topologici generali presenta significative difficoltà algoritmiche. Per superare questo ostacolo, adottiamo una strategia di approssimazione discreta: rappresentiamo gli spazi continui attraverso strutture combinatoriali chiamate \textbf{complessi simpliciali}.
+
+% Questi oggetti discreti offrono due vantaggi fondamentali:
+% \begin{enumerate}
+%     \item Consentono il calcolo efficiente dell'omologia mediante algoritmi ben definiti
+%     \item Preservano le informazioni topologiche essenziali dello spazio originale
+% \end{enumerate}
+
+% Nella pratica dell'analisi topologica dei dati, raramente disponiamo di una descrizione completa dello spazio $X$. Più tipicamente, lavoriamo con un insieme finito di punti campione $S \subset X$, dai quali dobbiamo ricostruire le proprietà topologiche globali. Questo processo di ricostruzione avviene attraverso la costruzione di complessi simpliciali utilizzando varie metodologie geometriche e combinatoriali, che verranno illustrate nelle sezioni successive.
+
+% La transizione dai dati discreti alle strutture topologiche rappresenta quindi il cuore dell'analisi topologica: trasformare informazioni locali e frammentarie in una comprensione globale della forma e della struttura dei dati.
 \subsection{Complessi Simpliciali}
+Cominciamo con una breve introduzione ai complessi simpliciali e alle mappe tra di essi.
+Intuitivamente, un complesso simpliciale è un'unione di punti, linee, triangoli, tetraedri, e politopi in dimensioni superiori. Vediamo una definizione rigorosa.
+
 \begin{definition}
-    Sia $V$ un insieme finito non vuoto. Un \textbf{complesso simpliciale astratto} su $V$ è una collezione $K$ di sottoinsiemi di $V$ tale che:
+    Sia $K_0$ un insieme. Un \textbf{complesso simpliciale astratto} su $K_0$ è una collezione $K$ di sottoinsiemi non vuoti di $K_0$ tale che:
     \begin{itemize}
-        \item per ogni $v \in V$, $\{v\} \in K$;
+        \item per ogni $v \in K_0$, $\{v\} \in K$;
         \item Se $\sigma \in K$ e $\tau \subseteq \sigma$, allora $\tau \in K$.
     \end{itemize}
 \end{definition}
-Gli elementi di $V$ sono detti \textbf{vertici} del complesso simpliciale $K$, mentre gli elementi di $K$ sono detti \textbf{simplessi} di $K$. Ogni simplesso $\tau \subset \sigma$ è detta \textbf{faccia} di $\sigma$.
+Gli elementi di $K_0$ sono detti \textbf{vertici} del complesso simpliciale $K$, mentre gli elementi di $K$ sono detti \textbf{simplessi} di $K$.
 
-Sia $\sigma \in K$ un simplesso. Se $|\sigma| = k + 1$, allora diciamo che $\sigma$ ha \textbf{dimensione} $k$ e lo chiamiamo \textbf{$k$-simplesso}. Denotiamo con $K_k$ l'insieme di tutti i $k$-simplessi di $K$. La \textbf{dimensione} del complesso simpliciale $K$ è definita come la massima dimensione dei suoi simplessi. Il \textbf{$k$-scheletro} di $K$ è il sottocomplesso formato da tutti i simplessi di dimensione minore o uguale a $k$, ovvero l'unione dei $K_p$ per $p = 0 ,\dots, k$.
+Sia $\sigma \in K$ un simplesso. Se $|\sigma| = p + 1$, allora diciamo che $\sigma$ ha \textbf{dimensione} $p$ e lo chiamiamo \textbf{$p$-simplesso}. Denotiamo con $K_p$ l'insieme di tutti i $p$-simplessi di $K$. La \textbf{dimensione} del complesso simpliciale $K$ è definita come la massima dimensione dei suoi simplessi. Il \textbf{$k$-scheletro} di $K$ è il sottocomplesso formato da tutti i simplessi di dimensione minore o uguale a $k$, ovvero l'unione dei $K_p$ per $p = 0 ,\dots, k$. Ogni simplesso $\tau \subset \sigma$ è detto \textbf{faccia} di $\sigma$, e diciamo che $\tau$ è una faccia di $\sigma$ di \textbf{codimensione} $q$ se la sua dimensione differisce di $q$ da quella di $\sigma$.
+Diciamo che $L \subseteq K$ è un \textbf{sottocomplesso} di $K$ se, per ogni $\sigma \in L$, ogni faccia di $\sigma$ in $K$ appartiene a $L$.
+
+\begin{remark}
+    \`E possibile associare a ogni complesso simpliciale astratto una \textit{realizzazione geometrica}. Questa consiste in un sottoinsieme di $\mathbb{R}^n$ (per un opportuno $n$) formato da punti e da inviluppi covessi di tali punti, i quali rappresentano rispettivamente i vertici e i simplessi del complesso simpliciale.
+\end{remark}
 
 Sia $K$ un complesso simpliciale astratto.
-\begin{definition}
-    $L \subseteq K$ è un \textbf{sottocomplesso} di $K$ se, per ogni $\sigma \in L$, ogni faccia di $\sigma$ in $K$ appartiene a $L$.
-\end{definition}
 
 \begin{definition}
-    Una \textbf{filtrazione} di $K$ (di lunghezza n) è una famiglia di sottocomplessi $\{\mathbf{F}_iK\}_{i \in I}$, dove $I = \{0,1,\ldots,n\}$ è un insieme finito di indici, tale che:
-    \begin{itemize}
-        \item $\mathbf{F}_iK \subseteq \mathbf{F}_jK$ se $i \leq j$;
-        \item $\displaystyle \bigcup_{i \in I} \mathbf{F}_iK = K$.
-    \end{itemize}
-\end{definition}
-
-\`E possibile associare a un complesso simpliciale astratto una realizzazione geometrica, cioè un sottoinsieme di $\mathbb{R}^n$, per un certo $n$, composto da punti che rappresentano i vertici del complesso e poliedri, con vertici questi punti, che rappresentano i simplessi. 
-
-TODO: esempio complesso simpliciale e realizzazione geometrica.
-
-\begin{definition}
-    Dati $K$ e $L$ due complessi simpliciali, una \textbf{mappa simpliciale} $f : K \rightarrow L$ è una mappa che manda vertici in vertici tale che per ogni simplesso $\sigma = \{v_1, \dots, v_n\}$ in $K$, $f(\sigma) = \{f(v_1), \dots, f(v_n)\}$ è un simplesso di $L$.
+    Dati $K$ e $L$ due complessi simpliciali rispettivamente su $K_0$ e $L_0$, una \textbf{mappa simpliciale} $f : K \rightarrow L$ è una mappa $f : K_0 \to L_0$ tale che per ogni simplesso $\sigma = \{v_1, \dots, v_n\}$ in $K$, $f(\sigma) = \{f(v_1), \dots, f(v_n)\}$ è un simplesso di $L$.
 
     Chiamiamo $f$ un \textbf{isomorfismo} se esiste un'inversa $g: L \rightarrow K$ tale che $f \circ g = \text{id}_L$ e $g \circ f = \text{id}_K$.
 \end{definition}
+% \vspace{0.5cm}
+% \begin{examplebox}\label{esempio: complesso simpliciale}
+%     Consideriamo come insieme dei vertici $V = \{a,b,c,d,e,f,g,h\}$, e i complessi simpliciali $K, K'$ definiti come:
+%     \begin{align*}
+%         &K = \{\{a\}, \{b\}, \{c\}, \{d\}, \{e\}, \{a,b\}, \{a,c\}, \{a,d\}, \{b,c\}, \{c,d\}, \{a,b,c\}\}\\
+%         &K' = \{\{l\}, \{g\}, \{h\}, \{l,g\}, \{l,h\}, \{g,h\},\{l,g,h\}\}
+%     \end{align*}
+%     Possiamo rappresentare $K$ e $K'$ in $\mathbb{R}^2$ come segue:
+    
+%     \begin{center}
+%         \input{Immagini/complesso_simpliciale.tex}
+%     \end{center}
+    
+%     Possiamo definire una mappa simpliciale $f : K \to K'$ come $f:K_0 \to K'_0$ tale che, per $x \in K_0$:
+%     \begin{align*}
+%         f(x) = \begin{cases*}
+%             g & \text{se } $x=a$,\\
+%             h & \text{altrimenti}
+%         \end{cases*}
+%     \end{align*}
+% \end{examplebox}
+
+\subsection{Omologia}
+Introduciamo ora i concetti di catene e gruppi di omologia, che ci permettono di associare a un complesso simpliciale un insieme di spazi vettoriali, chiamati gruppi di omologia, che catturano le proprietà topologiche del complesso.
 
 Possiamo definire un' \textbf{orientazione} su $K$ come una funzione $o : K_0 \to \mathbb{N}$, che associa un ordine ai vertici del complesso simpliciale. Questo ci permette di scrivere i simplessi come tuple ordinate, cioè come $(v_0, \ldots, v_k)$, dove $v_i$ sono i vertici del simplesso e $o(v_i) < o(v_j)$ se $i < j$. %Chiamiamo questi simplessi \textbf{orientati}.
 
-Dato un simplesso $\sigma = (v_0, \ldots, v_k)$, possiamo quindi definire la \textbf{faccia $i$-esima} di $\sigma$ come il \mbox{$(k-1)$-simplesso} ottenuto rimuovendo il vertice $v_i$, cioè $\sigma_{-i} = (v_0, \ldots, v_{i-1}, v_{i+1}, \ldots, v_k)$.
+Dato un simplesso $\sigma = (v_0, \ldots, v_k)$, possiamo quindi definire la \textbf{faccia $i$-esima} di $\sigma$ come il \mbox{$(k-1)$-simplesso} ottenuto rimuovendo il vertice $v_i$, cioè $\sigma_{-i} = (v_0, \ldots, \widehat{v}_i, \ldots, v_k)$.
 % \begin{definition}
 %     Dato $\sigma = (v_0, \ldots, v_k)$ $k$-simplesso, chiamiamo \textbf{bordo} di $\sigma$ la:
 %     \begin{equation*}
@@ -127,215 +212,613 @@ Dato un simplesso $\sigma = (v_0, \ldots, v_k)$, possiamo quindi definire la \te
 %     \end{equation*}
 % \end{definition}
 
-\subsection{Omologia}
 Sia $K$ un complesso simpliciale orientato, e sia $\mathbb{F}$ un campo. 
 \begin{definition}
-    Sia $k \geq 0$. Il $k$-esimo \textbf{gruppo delle catene} di $K$ su $\mathbb{F}$ è lo spazio vettoriale $\mathcal{C}_k(K, \mathbb{F})$ su $\mathbb{F}$ che ha come base i $k$-simplessi di $K$.
+    Sia $p \geq 0$. Il $p$-esimo \textbf{gruppo delle catene} di $K$ su $\mathbb{F}$ è lo spazio vettoriale $\mathcal{C}_p(K, \mathbb{F})$ su $\mathbb{F}$ che ha come base i $p$-simplessi di $K$.
 
-    Chiamiamo $\gamma \in \mathcal{C}_k(K, \mathbb{F})$ una \textbf{$k$-catena} di $K$, e possiamo scriverla come
+    Chiamiamo $\gamma \in \mathcal{C}_p(K, \mathbb{F})$ una \textbf{$p$-catena} di $K$, e possiamo scriverla come
     \begin{align*}
-        \gamma = \sum_{\sigma \in K_k} \gamma_\sigma \sigma ,\quad \text{con } \gamma_\sigma \in \mathbb{F}.
+        \gamma = \sum_{\sigma \in K_p} c_\sigma \sigma ,\quad \text{con } c_\sigma \in \mathbb{F}.
     \end{align*}
-\end{definition}
 
-\begin{definition}
-    Dato $k \geq 0$, definiamo il $k$-esimo \textbf{operatore di bordo} di $K$ come la mappa $\mathbb{F}$-lineare $\partial_k : \mathcal{C}_k(K, \mathbb{F}) \to \mathcal{C}_{k-1}(K, \mathbb{F})$ per cui, per ogni $\sigma$ nella base di $\mathcal{C}_k(K, \mathbb{F})$, vale che
+    Definiamo il $p$-esimo \textbf{operatore di bordo} di $K$ come la mappa $\mathbb{F}$-lineare $\partial_p : \mathcal{C}_p(K, \mathbb{F}) \to \mathcal{C}_{p-1}(K, \mathbb{F})$ per cui, per ogni $\sigma$ nella base di $\mathcal{C}_p(K, \mathbb{F})$, vale che
     \begin{align*}
-        \partial_k(\sigma) = \sum_{i=0}^k (-1)^i \sigma_{-i},
+        \partial_p(\sigma) = \sum_{i=0}^p {(-1)}^i \sigma_{-i}
     \end{align*}
     dove assumiamo che $\mathcal{C}_{-1}(K, \mathbb{F}) = \{0\}$.
+
+    Quindi, per ogni $p$, la mappa $\partial_p$ associa a ogni $p$-catena $\gamma$ il suo \textbf{bordo}, cioè la somma delle sue facce di dimensione $p-1$.
 \end{definition}
 
-TODO: esempio di bordo di un $k$-simplesso.
+In seguito, per brevità, indicheremo con $\mathcal{C}_p(K)$ il gruppo delle catene per un generico campo $\mathbb{F}$.
+
+% TODO: esempio di bordo di un $k$-simplesso.
 
 \begin{proposition}
-    Per ogni $k \geq 0$, vale che $\partial_k \circ \partial_{k+1} = 0$.
+    Per ogni $p \geq 0$, vale che $\partial_p \circ \partial_{p+1} = 0$.
 \end{proposition}
-\begin{proof}
-    Consideriamo il caso $k = 1$. Sia $\sigma = (v_0, v_1, v_2)$ un $2$-simplesso. Allora
-    \begin{align*}
-        \partial_1(\partial_2(\sigma)) &= \partial_2\left( \sigma_{-0} - \sigma_{-1} + \sigma_{-2} \right)\\
-        &= \partial_1\left( (v_0, v_1) + (v_0, v_2) + (v_1, v_2) \right) \\
-        &= \partial_1((v_0, v_1)) + \partial_2((v_0, v_2)) + \partial_2((v_1, v_2)) \\
-        &= (v_1) - (v_0) + (v_2) - (v_0) + (v_2) - (v_1) = 0.
-    \end{align*}
-    Per linearità di $\partial_k$, abbiamo che $\partial_2 \circ \partial_1 = 0$ per ogni $\gamma \in \mathcal{C}_2(K,\mathbb{F})$.
 
-    TODO: dimostrazione generale
-\end{proof}
-Ottrniamo quindi una successione di spazi vettoriali della forma:
-\begin{align*}
-    \cdots \xrightarrow[\rule{20pt}{0pt}]{\partial_{k+1}} \mathcal{C}_k(K, \mathbb{F}) \xrightarrow[\rule{20pt}{0pt}]{\partial_k} \mathcal{C}_{k-1}(K, \mathbb{F}) \xrightarrow[\rule{20pt}{0pt}]{\partial_{k-1}} \cdots \xrightarrow[\rule{20pt}{0pt}]{\partial_1} \mathcal{C}_0(K, \mathbb{F}) \xrightarrow[\rule{20pt}{0pt}]{\partial_0} 0.
-\end{align*}
-% Chiamiamo la collezione $(\mathcal{C}_k(K,\mathbb{F}), \partial_k)_{k \geq 0}$ un \textbf{complesso di catene simpliciale} su $\mathbb{F}$, al quale ci riferiremo semplicemente come complesso di catene.
-Diamo ora la definizione di \textit{gruppo di omologia simpliciale}, al quale ci riferiremo semplicemente come gruppo di omologia, in quanto la definizione generale non ci interesserà in questa relazione.
+Pertanto, l'immagine di $\partial_{p+1}$ è contenuta nel nucleo di $\partial_p$, è quindi ben definito il quoziente della seguente Definizione:
+% % Chiamiamo la collezione $(\mathcal{C}_k(K,\mathbb{F}), \partial_k)_{k \geq 0}$ un \textbf{complesso di catene simpliciale} su $\mathbb{F}$, al quale ci riferiremo semplicemente come complesso di catene.
+% Diamo ora la definizione di \textit{gruppo di omologia simpliciale}, al quale ci riferiremo semplicemente come gruppo di omologia, in quanto la definizione generale non ci interesserà in questa relazione.
 \begin{definition}
-    Per ogni $k \geq 0$, definiamo il $k$-esimo \textbf{gruppo di omologia} di $K$ su $\mathbb{F}$ come il quoziente:
+    Per ogni $p \geq 0$, il $p$-esimo \textbf{gruppo di omologia} di $K$ è definito come il quoziente:
     \begin{align*}
-        H_k(K, \mathbb{F}) = \faktor{\text{Ker}(\partial_k)}{\text{Im}(\partial_{k+1})}
+        H_p(K) = \faktor{\text{Ker}(\partial_p)}{\text{Im}(\partial_{p+1})}
     \end{align*}
-    Chiamiamo \textbf{$k$-cicli} gli elementi di $\text{Ker}(\partial_k)$, e \textbf{$k$-bordi} gli elementi di $\text{Im}(\partial_{k+1})$.
+    Chiamiamo \textbf{$p$-cicli} gli elementi di $\text{Ker}(\partial_p)$, e \textbf{$p$-bordi} gli elementi di $\text{Im}(\partial_{p+1})$.
+    Chiamiamo inoltre \textbf{$p$-esimo numero di Betti} di $K$ la sua dimensione:
+    \begin{align*}
+        \beta_p(K) = \dim H_p(K) = \dim \text{Ker}(\partial_p) - \dim \text{Im}(\partial_{p+1}).
+    \end{align*}
 \end{definition}
 
-In seguito, per brevità, indicheremo con $H_k(K)$ il gruppo di omologia $H_k(K, \mathbb{F})$ quando il campo $\mathbb{F}$ non è specificato.
+Intuitivamente, i $p$-cicli che non sono bordi rappresentano ``buchi" di dimensione $p$. Perciò i numeri di Betti ``contano'' il numero di buchi. Inoltre, $H_p(K) = 0$ per ogni $p$ maggiore di $n$, con $n$ la dimensione di $K$, e di conseguenza anche $\mathcal{C}_p(K) = 0$.
 
-Dato che $K$ è finito, i gruppi di omologia $H_k(K)$ hanno dimensione finita, e, per ogni $k \geq 0$, possiamo definire il $k$-esimo \textbf{numero di Betti} come $\beta_k (K) = \dim H_k(K)$
+Otteniamo quindi una successione di spazi vettoriali della forma:
+\begin{align*}
+    0 \xrightarrow[\rule{20pt}{0pt}]{\partial_{n+1}} \mathcal{C}_n(K) \xrightarrow[\rule{20pt}{0pt}]{\partial_n} \cdots \xrightarrow[\rule{20pt}{0pt}]{\partial_1} \mathcal{C}_0(K) \xrightarrow[\rule{20pt}{0pt}]{\partial_0} 0.
+\end{align*}
 
-\begin{remark}
-    I numeri di Betti caratterizzano completamente la struttura algebrica dei gruppi di omologia su un campo, in quanto $H_k(K, \mathbb{F})$ è isomorfo a $\mathbb{F}^{\beta_k}$. Tuttavia, non forniscono basi dei gruppi di omologia come spazi vettoriali.
-\end{remark}
+% \begin{examplebox}
+%     Consideriamo il complesso simpliciale $K$ dell'esempio \ref{esempio: complesso simpliciale}, lo orientiamo ordinando i vertici alfabeticamente, e otteniamo la successione di gruppi di catene:
+%     \begin{align*}
+%         0 \xrightarrow[\rule{20pt}{0pt}]{\partial_{3}} \mathbb{F} \xrightarrow[\rule{20pt}{0pt}]{\partial_2} \mathbb{F}^5 \xrightarrow[\rule{20pt}{0pt}]{\partial_1} \mathbb{F}^5 \xrightarrow[\rule{20pt}{0pt}]{\partial_0} 0,
+%     \end{align*}
+%     dove il primo gruppo diverso da $0$ è quello generato da $(a,b,c)$, il secondo è il generato da $(a,b), (a,c), (a,d), (b,c), (c,d)$, e l'ultimo dai singoletti.
+%     Possiamo rappresentare le mappe non banali tra i gruppi in forma matriciale, prendendo come base i simplessi in ordine lessicografico:
+%     \begin{align*}
+%         \partial_2 = \begin{bmatrix*}
+%         1 \\
+%         -1 \\
+%         0 \\
+%         1 \\
+%         0 \\
+%         \end{bmatrix*},\quad
+%         \partial_1 = \begin{bmatrix*}
+%             -1 & -1 & -1 & 0 & 0 \\
+%             1 & 0 & 0 & -1 & 0 \\
+%             0 & 1 & 0 & 1 & -1 \\
+%             0 & 0 & 1 & 0 & 1 \\
+%             0 & 0 & 0 & 0 & 0\\
+%         \end{bmatrix*}
+%     \end{align*}
+%     Perciò, i numeri di Betti diversi da $0$ sono $\beta_0(K) = 5-3 = 2$, $\beta_1(K) = 2 - 1 = 1$
+% \end{examplebox}
 
-TODO: esempio gruppi di omologia.
-
-% \begin{definition}
-%     Chiamiamo \textbf{k-simplesso standard} l'insieme definito come:
-%     \begin{equation*}
-%         \Delta^k = \left\{ (x_0, x_1, \ldots, x_k) \in [0,\infty)^{k+1} : \sum_{i=0}^k x_i = 1 \right\}.
-%     \end{equation*}
-% \end{definition}
+% % \begin{definition}
+% %     Chiamiamo \textbf{k-simplesso standard} l'insieme definito come:
+% %     \begin{equation*}
+% %         \Delta^k = \left\{ (x_0, x_1, \ldots, x_k) \in [0,\infty)^{k+1} : \sum_{i=0}^k x_i = 1 \right\}.
+% %     \end{equation*}
+% % \end{definition}
 
 \subsection{Mappe indotte su gruppi di omologia}
-Dati $K$, $K'$ due complessi simpliciali e $f : K \to L$ una mappa simpliciale, questa induce, per ogni $k \geq 0$, una mappa $\mathbb{F}_2$-lineare $\mathcal{C}_k(f): \mathcal{C}_k(K) \to \mathcal{C}_k(L)$, definita sui $\sigma$ nella base di $\mathcal{C}_k(K)$ come:
+Vediamo ora che una mappa tra complessi simpliciali induce una mappa in omologia compatibile con la composizione, proprietà nota come ``funtorialità".
+Dati $K$, $K'$ due complessi simpliciali e $f : K \to K'$ una mappa simpliciale, questa induce, per ogni $p \geq 0$, una mappa $\mathbb{F}$-lineare $\widetilde{f}_p: \mathcal{C}_k(K) \to \mathcal{C}_k(K')$, definita sui $\sigma$ nella base di $\mathcal{C}_k(K)$ come:
 \begin{align*}
-    \mathcal{C}_k(f)(\sigma) =
+    \widetilde{f}_p(\sigma) =
     \begin{cases}
-        f(\sigma) & \text{se } \dim f(\sigma) = k,\\
+        f(\sigma) & \text{se } \dim f(\sigma) = p,\\
         0 & \text{altrimenti.}
     \end{cases}
 \end{align*}
 
-Queste mappe si comportano bene rispetto agli operatori di bordo, come mostrato nella seguente proposizione. In particolare, le mappe indotte da $f$ sui gruppi delle catene commutano con gli operatori di bordo, formando così un diagramma commutativo. Questa proprietà fondamentale costituisce la base per la definizione delle mappe indotte sui gruppi di omologia.
-
-
 \begin{proposition} \label{prop:bordo-mappa}
-    Sia $f : K \to L$ una mappa simpliciale tra complessi simpliciali. Allora, per ogni $k \geq 0$ e $\sigma \in K_k$, vale che:
+    Sia $f : K \to K'$ una mappa simpliciale tra complessi simpliciali. Allora, per ogni $p \geq 0$ e $\sigma \in K_p$, vale che:
     \begin{align*}
-        \mathcal{C}_{k-1}(f) \circ \partial_k^K (\sigma) = \partial_k^L \circ \mathcal{C}_k(f)(\sigma),
+        \widetilde{f}_{p-1} \circ \partial_p (\sigma) = \partial_p' \circ \widetilde{f}_p(\sigma),
     \end{align*}
-    dove $\partial_k^K$ e $\partial_k^L$ sono gli operatori di bordo di $K$ e $L$, rispettivamente.
+    con $\partial_p^K$ e $\partial_p^{K'}$ gli operatori di bordo di $K$ e $K'$, rispettivamente.
 \end{proposition}
 
-\begin{proof}
-    Sia $\sigma$ un $k$-simplesso di $K$. Imponiamo delle orientazioni $o_K$, $o_L$ su $K$, e $L$ tali che $f$ preservi l'orientazione, cioè, se $o_K(v) < o_K(v')$, allora $o_L(f(v)) \le o_L(f(v'))$. Scriviamo $\sigma = (v_0,\dots,v_k)$ come simplesso orientato secondo $o_K$, quindi abbiamo due casi da considerare:
-    \begin{itemize}
-        \item Se $\dim f(\sigma) = k$, allora $f(\sigma)$ è un $k$-simplesso di $L$, e $\mathcal{C}_k(f)(\sigma) = f(\sigma)$. Pertanto, abbiamo che
-        \begin{align*}
-            \mathcal{C}_{k-1}(f) \circ \partial_k^K (\sigma) &= \mathcal{C}_{k-1}(f)\left( \sum_{i=0}^{k-1} (-1)^i \sigma_{-i} \right)\\
-            &= \sum_{i=0}^{k-1} (-1)^i f(\sigma_{-i}) = \partial_k^L(f(\sigma)) = \partial_k^L \circ \mathcal{C}_k(f)(\sigma),
-        \end{align*}
-        dove il secondo passaggio segue dalla linearità di $\mathcal{C}_{k-1}(f)$ e dal fatto che se $\dim f(\sigma) = k$, allora $\dim f(\sigma_{-i}) = k-1$ per ogni $i$.
-        \item Se $\dim f(\sigma) < k$, allora $\mathcal{C}_k(f)(\sigma) = 0$, e quindi anche $\partial_k^L (\mathcal{C}_k(f)(\sigma)) = 0$. Basta quindi verificare che $\mathcal{C}_{k-1}(f) \circ \partial_k^K(\sigma) = 0$. Dato che $f$ preserva l'orientazione, deve valere che $f(v_p) = f(v_{p+1})$ per qualche $p \in \{0, \ldots, k-1\}$, perciò $\dim f(\sigma_{-i}) < k-1$ per ogni $i \ne p, p+1$. Di conseguenza,
-        \begin{align*}
-            \mathcal{C}_{k-1}(f) \circ \partial_k^K (\sigma) &= \mathcal{C}_{k-1}(f)\left( \sum_{i=0}^{k-1} (-1)^i \sigma_{-i} \right)\\
-            &= \sum_{i=0}^{k-1} (-1)^i \mathcal{C}_{k-1}(f)(\sigma_{-i})\\
-            &= (-1)^p (f(\sigma_{-p}) - f(\sigma_{-(p+1)})) = 0,
-        \end{align*}
-        dove l'ultima uguaglianza segue dal fatto che $f(\sigma_{-p}) = (f(v_0),\dots,f(v_p),f(v_{p+2}),\dots,f(v_k)) =f(\sigma_{-(p+1)})$.
-    \end{itemize}
-\end{proof}
-
 \begin{remark}
-    Data $f: K \to L$ una mappa simpliciale, la Proposizione \ref{prop:bordo-mappa} ha come conseguenza che il seguente diagramma commuta: 
-
-    % https://q.uiver.app/#q=WzAsMTIsWzEsMCwiXFxtYXRoY2Fse0N9X2soSykiXSxbMiwwLCJcXG1hdGhjYWx7Q31fe2stMX0oSykiXSxbMSwxLCJcXG1hdGhjYWx7Q31fayhMKSJdLFsyLDEsIlxcbWF0aGNhbHtDfV97ay0xfShMKSJdLFszLDAsIlxcZG90cyJdLFs0LDAsIlxcbWF0aGNhbHtDfV8wKEspIl0sWzAsMCwiXFxkb3RzIl0sWzAsMSwiXFxkb3RzIl0sWzMsMSwiXFxkb3RzIl0sWzQsMSwiXFxtYXRoY2Fse0N9XzAoTCkiXSxbNSwwLCIwIl0sWzUsMSwiMCJdLFswLDEsIlxccGFydGlhbF9rXksiXSxbMCwyLCJcXG1hdGhjYWx7Q31fe2t9KGYpIl0sWzIsMywiXFxwYXJ0aWFsX2teTCIsMl0sWzEsMywiXFxtYXRoY2Fse0N9X3trLTF9KGYpIl0sWzEsNCwiXFxwYXJ0aWFsX3trLTF9XksiXSxbNiwwLCJcXHBhcnRpYWxfe2srMX1eSyJdLFs3LDIsIlxccGFydGlhbF97aysxfV5MIiwyXSxbMyw4LCJcXHBhcnRpYWxfe2stMX1eSyIsMl0sWzgsOSwiXFxwYXJ0aWFsXzFeTCIsMl0sWzQsNSwiXFxwYXJ0aWFsXzFeSyJdLFs1LDksIlxcbWF0aGNhbHtDfV8wKGYpIl0sWzUsMTAsIjAiXSxbOSwxMSwiMCJdLFsxMCwxMSwiIiwxLHsibGV2ZWwiOjIsInN0eWxlIjp7ImhlYWQiOnsibmFtZSI6Im5vbmUifX19XV0=
-\[\begin{tikzcd}
-	\dots & {\mathcal{C}_k(K)} & {\mathcal{C}_{k-1}(K)} & \dots & {\mathcal{C}_0(K)} & 0 \\
-	\dots & {\mathcal{C}_k(L)} & {\mathcal{C}_{k-1}(L)} & \dots & {\mathcal{C}_0(L)} & 0
-	\arrow["{\partial_{k+1}^K}", from=1-1, to=1-2]
-	\arrow["{\partial_k^K}", from=1-2, to=1-3]
-	\arrow["{\mathcal{C}_{k}(f)}", from=1-2, to=2-2]
-	\arrow["{\partial_{k-1}^K}", from=1-3, to=1-4]
-	\arrow["{\mathcal{C}_{k-1}(f)}", from=1-3, to=2-3]
-	\arrow["{\partial_1^K}", from=1-4, to=1-5]
-	\arrow["0", from=1-5, to=1-6]
-	\arrow["{\mathcal{C}_0(f)}", from=1-5, to=2-5]
-	\arrow[equals, from=1-6, to=2-6]
-	\arrow["{\partial_{k+1}^L}"', from=2-1, to=2-2]
-	\arrow["{\partial_k^L}"', from=2-2, to=2-3]
-	\arrow["{\partial_{k-1}^K}"', from=2-3, to=2-4]
-	\arrow["{\partial_1^L}"', from=2-4, to=2-5]
-	\arrow["0", from=2-5, to=2-6]
-\end{tikzcd}\]
-
-    Abbiamo inoltre che le mappe $\mathcal{C}_k(f)$ mandano bordi in bordi e cicli in cicli, cioè
+    Abbiamo inoltre che le mappe $\widetilde{f}_p$ mandano bordi in bordi e cicli in cicli, cioè
     \begin{align*}
-        \mathcal{C}_k(f)(\text{Ker} (\partial_k^K)) \subseteq \text{Ker} (\partial_k^L) , \quad \mathcal{C}_k(f)(\text{Im}(\partial_{k+1}^K)) \subseteq \text{Im}(\partial_{k+1}^L) 
+        \widetilde{f}_p(\text{Ker} (\partial_p)) \subseteq \text{Ker} (\partial_p') , \quad \widetilde{f}_p(\text{Im}(\partial_{p+1})) \subseteq \text{Im}(\partial_{p+1}') 
     \end{align*}
     
 \end{remark}
 
 Questo ci permette di dire che la seguente definizione è ben posta:
 \begin{definition}
-    Sia $K$ e $L$ due complessi simpliciali, e sia $f : K \to L$ una mappa simpliciale. Per ogni $k \geq 0$, definiamo la mappa $H_k(f) : H_k(K) \to H_k(L)$ indotta da $f$ sui gruppi di omologia come:
+    Sia $K$ e $K'$ due complessi simpliciali, e sia $f : K \to K'$ una mappa simpliciale. Per ogni $p \geq 0$, definiamo la mappa $f_p : H_p(K) \to H_p(K')$ indotta da $f$ sui gruppi di omologia come:
     \begin{align*}
-        H_k(f)([\gamma]) = [\mathcal{C}_k(f)(\gamma)]    
+        f_p([\gamma]) = [\widetilde{f}_p(\gamma)]    
     \end{align*}
-    per ogni $[\gamma] \in H_k(K)$, dove $[\gamma]$ denota la classe di equivalenza di $\gamma \in \mathcal{C}_k(K)$ in $H_k(K)$.
+    per ogni $[\gamma] \in H_p(K)$, dove $[\gamma]$ denota la classe di equivalenza di $\gamma \in \mathcal{C}_p(K)$ in $H_p(K)$.
 \end{definition}
 
-Una proprietà fondamentale dei complessi simpliciali e delle mappe tra di essi è la funtorialità, cioè:
 \begin{proposition} \label{prop:funtorialita}
     Sia $K$, $L$, $M$ tre complessi simpliciali, e siano $f : K \to L$ e $g : L \to M$ due mappe simpliciali. Allora, per ogni $k \geq 0$, vale che:
     \begin{align*}
-        H_k(g \circ f) = H_k(g) \circ H_k(f).
+        (g \circ f)_p = g_p \circ f_p.
     \end{align*}
 \end{proposition}
 
-\begin{proof}
-    Sia $\sigma$ un $k$-simplesso di $K$. Per definizione di mappa indotta sui gruppi di omologia, $H_k(g \circ f)[\sigma] = [\mathcal{C}_k(g \circ f)(\sigma)]$. Abbiamo allora due casi:
-    \begin{itemize}
-        \item Se $\dim (g \circ f)(\sigma) = k$, allora anche $\dim f(\sigma) = k$, e quindi
-            \begin{align*}
-                \mathcal{C}_k(g \circ f)(\sigma) = g(f(\sigma)) = g(\mathcal{C}_k(f)(\sigma)) = (\mathcal{C}_k(g) \circ \mathcal{C}_k(f))(\sigma).
-            \end{align*}
-            \item Se $\dim (g \circ f)(\sigma) < k$, allora $\mathcal{C}_k(g \circ f)(\sigma) = 0$. Distinguiamo due sottocasi:
-            \begin{itemize}
-                \item Se $\dim f(\sigma) = k$, allora $\mathcal{C}_k(f)(\sigma) = f(\sigma)$,ma $\dim g(f(\sigma)) < k$, quindi $\mathcal{C}_k(g)(f(\sigma)) = \mathcal{C}_k(g)(\mathcal{C}_k(f)(\sigma)) = 0$.
-                \item Se $\dim f(\sigma) < k$, allora $\mathcal{C}_k(f)(\sigma) = 0$, e quindi $\mathcal{C}_k(g)(\mathcal{C}_k(f)(\sigma)) = \mathcal{C}_k(g)(0) = 0$.
-            \end{itemize}
-    \end{itemize}
-    In entrambi i casi, otteniamo che $H_k(g \circ f)[\sigma] = [\mathcal{C}_k(g \circ f)(\sigma)] = [(\mathcal{C}_k(g) \circ \mathcal{C}_k(f))(\sigma)] = (H_k(g) \circ H_k(f))[\sigma]$, e la tesi segue dal fatto che $\sigma \in \mathcal{C}_k(K)$ è un generico elemento di base.
-\end{proof}
-
 \section{Omologia Persistente e Algoritmo di Calcolo}
-Consideriamo ora un complesso simpliciale $K$ e una filtrazione $\mathbf{F}_0K \subseteq \dots \subseteq \mathbf{F}_nK$ di $K$. Denotiamo con $g_{i,j} : \mathbf{F}_i K \hookrightarrow \mathbf{F}_{j} K$, con $i,j \in \{0,\dots,n\}$ e $i\leq j$, le inclusioni (come mappe simpliciali) tra i sottocomplessi.
+Supponiamo di avere a disposizione dati sperimentali sotto forma di uno spazio metrico finito $S$, costituito da un insieme di punti o vettori che rappresentano misurazioni e da una funzione di distanza sull'insieme. Possiamo pensare l'insieme $S$ come un campionamento di uno spazio topologico. Il nostro obiettivo è recuperare le proprietà di tale spazio in modo robusto rispetto a piccole perturbazioni nei dati $S$.
 
-Un esempio è la filtrazione seguente:\\
-\begin{center}
-    
-\input{drawing.svg.2025_07_03_18_46_15.0.pdf_tex}
+\subsection{Omologia Persistente}
+Partendo da un insieme di dati $S$, è possibile costruire una famiglia di complessi simpliciali parametrizzata da un valore $\varepsilon$, dove all'aumentare di questo parametro vengono aggiunti progressivamente nuovi simplessi ai complessi. Si può quindi tentare di calcolare le caratteristiche qualitative dell'insieme di dati $S$  calcolando l'omologia simpliciale del complesso relativo a $\varepsilon$. Il problema di questo approccio è che non esiste a priori una scelta chiara per il valore del parametro $\varepsilon$.
 
-TODO: rimpicciolire/abbellire disegno
-\end{center}
+L'intuizione chiave dell'omologia persistente è la seguente: per estrarre informazioni qualitative dai dati, si considerano diversi (o anche tutti i) possibili valori del parametro $\varepsilon$. L'omologia persistente cattura quindi come l'omologia dei complessi cambia al variare del valore del parametro, e rileva quali caratteristiche topologiche ``persistono".
 
-Le inclusioni inducono, per ogni $k \geq 0$, delle mappe lineari $H_k(g_{i,j}) : H_k(\mathbf{F}_iK) \hookrightarrow H_k(\mathbf{F}_{j}K)$.
-Inoltre, dato che $g_{i,j} = g_{i,i+1} \circ g_{i+1,i+2} \circ \cdots \circ g_{j-1,j}$, abbiamo che, per la Proposizione \ref{prop:funtorialita}
-\begin{align} \label{funt-inclusionni}
-    H_k(g_{i,j}) = H_k(g_{i,i+1}) \circ H_k(g_{i+1,i+2}) \circ \cdots \circ H_k(g_{j-1,j}).
-\end{align}
-% Quindi, per un $k$ fissato, otteniamo una successione del tipo:
-% \begin{align*}
-%     H_k(\mathbf{F}_0K) \xrightarrow[\rule{30pt}{0pt}]{H_Kg_0} H_k(\mathbf{F}_1K) \xrightarrow[\rule{30pt}{0pt}]{H_kg_1} \cdots \xrightarrow[\rule{30pt}{0pt}]{H_kg_{n-1}} H_k(\mathbf{F}_nK).
-% \end{align*}
-Dato quindi $K$ un complesso simpliciale filtrato e le inclusioni $g_{i,j}$, siamo pronti a dare la definizione centrale di questo lavoro:
 \begin{definition}
-    Per ogni coppia di indici $i \leq j$, definiamo il $k$-esimo \textbf{gruppo di omologia persistente} di $K$ come il come il sottospazio di $H_k(\mathbf{F}_iK)$ dato da
+    Sia $K$ un complesso simpliciale finito. Una \textbf{filtrazione} di $K$ (di lunghezza n) è una famiglia di sottocomplessi $K_{i \in I}$, con $I = \{1,\ldots,n\}$ un insieme finito di indici, tale che:
+    \begin{itemize}
+        \item $K_i \subseteq K_j$ se $i \leq j$;
+        \item $\displaystyle \bigcup_{i \in I} K_i = K$.
+    \end{itemize}
+\end{definition}
+
+Consideriamo ora un complesso simpliciale $K$ e una filtrazione $K_1 \subseteq \dots \subseteq K_n$ di $K$. Per ogni $p \geq 0$, possiamo considerare le inclusioni $K_i \to K_j$ per ogni $i \leq j$; queste sono mappe simpliciali, e quindi inducono delle mappe lineari in omologia
+\begin{align*}
+    f_{i,j} : H_p(K_i) \to H_p(K_j).
+\end{align*}
+Inoltre, per la Proposizione \ref{prop:funtorialita}, vale
+\begin{align*}
+    f_{k,j} \circ f_{i,k} = f_{i,j} \text{ per ogni } i \leq k \leq j.
+\end{align*}
+
+Possiamo quindi dare la definizione centrale di questa relazione.
+
+\begin{definition}
+    Siano $K_1 \subseteq \dots \subseteq K_n$ un complesso simpliciale filtrato e, per ogni $i \leq j$, $f_{i,j} : H_p(K_i) \to H_p(K_j)$ le mappe indotte dalle inclusioni come sopra. Chiamiamo \textbf{$p$-esima omologia persistente} di $K$ la coppia
     \begin{align*}
-        \mathbf{PH}_{k;i,j}(\mathbf{F}_{*}K) = \text{Im}(H_k(g_{i,j}))
+        \left(\{H_p(K_i)\}_{1 \leq i \leq n}, \{f_{i,j}\}_{1 \leq i \leq j \leq n}\right)
     \end{align*}
 \end{definition}
-Per brevità, nonostante questi gruppi dipendano dalla filtrazione, d'ora in poi li indicheremo con $\mathbf{PH}_{k;i,j}(K)$.
+
+Diciamo che $x \in H_p(K_i)$ \textbf{nasce} in $H_p(K_i)$ se non appartiene a $\text{Im}(f_{i-1,i})$, mentre diciamo che $x$ \textbf{muore} in $H_k(K_j)$ se $j > i$ è il più piccolo indice tale che $f_{i,j}(x)=0$, nel caso in cui non esista un tale $j$, poniamo l'indice della morte di $x$ uguale a $+\infty$ e diciamo che $x$ \textbf{vive per sempre}. Chiamiamo \textbf{intervallo di vita} di $x$ l'intervallo aperto $[i,j)$.
+
+\subsection{Barcode}
+Possiamo rappresentare le informazioni fornite dalla $p$-esima omologia persistente di un complesso $K$ attraverso ciò che chiamiamo \textbf{barcode}, che è un diagramma costruito come segue:
+\begin{itemize}
+    \item Per ogni $i \in \{1, \dots, n\}$, disegnamo un numero di punti corrispondente alla dimensione di $H_p(K_i)$;
+    \item Se il generatore di $H_p(K_i)$ corrispondente al punto $u$ è mandato nel generatore di $H_p(K_{i+1})$ corrispondente al punto $v$, disegnamo una linea orizzontale che li collega;
+    \item Se il generatore di $H_p(K_i)$ corrispondente al punto $u$ muore in $H_p(K_{i+1})$, cioè è mandato in $0$ da $f_{i,i+1}$, disegnamo una linea orizzontale che parte da $u$ e termina alla filtrazione $i+1$.
+\end{itemize}
 
 \begin{remark}
-    Dati $i \leq i' \leq j$, da \eqref{funt-inclusionni} segue che $\mathbf{PH}_{k;i,j}(K) \subseteq \mathbf{PH}_{k;i',j}(K)$, cioè i gruppi di omologia persistente sono monotoni rispetto agli indici della filtrazione.
+    Il barcode dipende dalla scelta delle basi degli spazi di omologia, tuttavia per il \textit{Teorema di Struttura}\cite{Zomorodian} dell'omologia persistente, esiste una base per ogni $H_p(K_i)$ tale che il diagramma sia una collezione ben definita e unica di intervalli semi-aperti disgiunti.
 \end{remark}
 
-Diciamo che $x \in H_k(\mathbf{F}_iK)$ \textbf{nasce} in $H_k(\mathbf{F}_iK)$ se non appartiene a $\text{Im}(H_k(g_{i-1,i}))$, mentre diciamo che $x$ \textbf{muore} in $H_k(\mathbf{F}_jK)$ se $j$ è il più piccolo indice tale che $H_k(g_{i,j})(x)=0$, nel caso in cui non esista un tale $j$, poniamo l'indice della morte di $x$ uguale a $+\infty$.
-Chiamiamo \textbf{persistenza} di $x$ il numero $j-i$, che rappresenta la distanza tra l'indice della nascita e quello della morte di $x$.
+\subsection{Algoritmo di Calcolo dell'Omologia Persistente}
+Al fine di calcolare l'omologia persistente di un complesso simpliciale filtrato $K$, utilizziamo una \textit{matrice di incidenza}, che è una rappresentazione delle relazioni tra i simplessi di $K$ e le loro facce.
 
-\section{Complessi Simpliciali}
-\section{Sperimentazione e Confronto}
-\section{Conclusioni}
+Sia $K_1 \subseteq \dots \subseteq K_n = K$ un complesso simpliciale filtrato. Ordiniamo i simplessi di $K$ compatibilmente con la filtrazione:
+\begin{itemize}
+    \item Se $\tau$ è una faccia di $\sigma$, allora $\tau < \sigma$
+    \item Se $i < j$, allora $\forall \tau \in K_i, \sigma \in K_j \setminus K_i$, vale $\tau < \sigma$.
+\end{itemize}
 
+\begin{definition}
+    Dati $ \sigma_1, \dots, \sigma_N$ i simplessi di $K$ ordinati come descritto sopra, la \textbf{matrice di incidenza} di $K$ è la matrice $M = (\delta_{i,j})_{i,j \in \{1, \dots, N\}}$ tale che
+    \begin{align*}
+        \delta_{i,j} = \begin{cases*}
+            1 & se $\sigma_i$ è una faccia di codimensione $1$ di $\sigma_j$,\\
+            0 & \text{altrimenti}
+        \end{cases*}
+    \end{align*}
 
+\end{definition}
+
+Per passare da una matrice di incidenza $M$ alla matrice che rappresenta effettivamente il barcode dell'omologia persistente di $K$, dobbiamo ridurre $M$ tramite eliminazione gaussiana. Noi vedremo solo l'\textit{algoritmo standard} di riduzione.
+
+% \textit{Algoritmo Standard}
+
+Definiamo la funzione \textbf{pivot} come la funzione $\text{low} : \{1, \dots, n\} \to \{0, 1, \dots, n\}$ con $\text{low}(j)$ il massimo $i$ tale che $\delta_{i,j} \neq 0$, cioè l'indice della riga ``più bassa'' che non è zero nella colonna $j$ della matrice $M$. Se $j$ ha solo zeri, allora $\text{low}(j) = 0$.
+
+Diciamo che la matrice di incidenza è \textbf{ridotta} se $\text{low}$ è iniettiva sulle colonne diverse da $0$.
+
+L'algoritmo standard è illustrato nel seguente:
+
+\begin{algorithm}[H]
+    % \tt
+    % \small
+    \caption{Algoritmo standard di riduzione di una matrice di incidenza}
+\begin{algorithmic}
+\For{$j=1, \dots, n$}
+\While{$\exists i<j : \text{low}(i) = \text{low}(j)$}
+\State somma la colonna $i$ alla colonna $j$
+\EndWhile
+\EndFor
+\end{algorithmic}
+\label{algo: standard}
+\end{algorithm}
+
+Una volta ridotta la matrice, possiamo estrarre il barcode dell'omologia persistente di $K$ analizzando le righe della matrice ridotta. Ogni colonna corrisponde a un generatore di omologia, e le righe non nulle indicano le relazioni di morte tra i generatori. In particolare, accopiamo i simplessi nel seguente modo:
+\begin{itemize}
+    \item Se $\text{low}(j) = i \neq 0$, allora accoppiamo $\sigma_i$ con $\sigma_j$, e la caratteristica omologica che nasce quando compare $\sigma_i$ nella filtrazione muore con l'entrata di $\sigma_j$.
+    \item Se $\text{low}(j) = 0$, allora quando $\sigma_j$ compare nella filtrazione, si crea una nuova caratteristica. Tale caratteristica muore con $\sigma_k$ se $\text{low}(k) = j$, e in questo caso accoppiamo $\sigma_j$ con $\sigma_k$; altrimenti $\sigma_j$ rimane disaccoppiato e la caratteristica corrispondente vive per sempre.
+\end{itemize}
+
+Dato un simplesso $\sigma$, chiamiamo \textbf{grado} di $\sigma$, $dg(\sigma)$, il più piccolo numero $l$ tale che $\sigma \in K_l$.
+
+Abbiamo quindi che una coppia $(\sigma_i, \sigma_j)$ di simplessi corrisponde all'intervallo $[dg(\sigma_i), dg(\sigma_j))$ nel barcode, e un simplesso $\sigma_k$ disaccoppiato corrisponde all'intervallo $[dg(\sigma_k), \infty)$.
+
+\subsection{Diagrammi di Persistenza e Distanza Bottleneck}
+
+Nelle sperimentazioni è spesso necessario confrontare i barcode ottenuti da diversi complessi simpliciali o da diversi dati. A tale scopo, introduciamo i concetti di \textit{diagramma di persistenza}, che costituisce una rappresentazione alternativa e perfettamente equivalente del barcode, e di \textit{distanza bottleneck}.
+
+\begin{definition}
+    Chiamiamo \textbf{diagramma di persistenza} un multiinsieme finito di punti nel piano esteso $\mathbb{R} \times \left(\mathbb{R} \cup \{\infty\}\right)$, dove ogni punto rappresenta un generatore di omologia persistente. L'asse orizzontale rappresenta l'indice di nascita del generatore, mentre l'asse verticale rappresenta l'indice di morte. Includiamo nel diagramma anche tutti i punti sulla diagonale $\Delta=\{(x,x) \mid x \in \mathbb{R}\}$, ognuno con molteplicità infinita.
+\end{definition}
+
+Consideriamo due diagrammi di persistenza $X$ e $Y$.
+
+\begin{definition}
+    Sia $p \in [1, \infty]$ e $d$ una metrica su $\mathbb{R}^2$. La \textbf{$p$-esima distanza di Wasserstein} tra $X$ e $Y$ è data da
+    \begin{align*}
+        W_p[d] (X,Y) = \inf_{\substack{\Phi: X \to Y\\ \Phi \text{ bigezione}}}\left[ \sum_{x \in X} d[x, \Phi(x)]^p \right]^{1/p}
+    \end{align*}
+    per $p < \infty$, e
+    \begin{align*}
+        W_{\infty}[d] (X,Y) = \inf_{\substack{\Phi: X \to Y\\ \Phi \text{ bigezione}}} \sup_{x \in X} d[x, \Phi(x)]
+    \end{align*}
+    Chiamiamo \textbf{distanza bottleneck} la distanza di Wasserstein $W_{\infty}[L_{\infty}]$.
+\end{definition}
+
+\begin{remark}
+    Il \textit{Primo Teorema di Stabilità}\cite{Cohen} per l'omologia persistente stabilisce che, sotto condizioni favorevoli, il passaggio dai complessi simpliciali filtrati ai barcode è $1$-Lipschitz continuo rispetto a opportune funzioni di distanza sui complessi filtrati e alla distanza bottleneck sui barcode. Questo risultato fondamentale garantisce che piccole variazioni nei dati originali producano solo piccole variazioni nelle strutture topologiche rilevate, rendendo l'omologia persistente robusta al rumore sperimentale.
+\end{remark}
+
+\section{Complessi Simpliciali Filtrati}
+
+Come accennato nella Sezione \ref{sec:topologia-algebrica}, per studiare l'omologia persistente di uno spazio arbitrario vogliamo trovare un complesso simpliciale la cui omologia approssimi abbastanza quella dello spazio. In questa sezione introduciamo delle costruzioni dei complessi che vedremo nelle sperimentazioni, partendo da due costruzioni generiche.
+
+\begin{definition}
+    Sia $\mathcal{U} = \{\mathcal{U}_i\}_{i \in I}$ una collezione non vuota di insiemi. Chiamiamo \textbf{nervo} di $\mathcal{U}$ il complesso simpliciale i cui vertici sono gli elementi di $I$ e i cui $k$-simplessi sono le collezioni di $k+1$ indici $i_0, \ldots, i_k$ tali che $\mathcal{U}_{i_0} \cap \dots \cap \mathcal{U}_{i_k} \neq \emptyset$.
+\end{definition}
+
+Nel caso in cui $\mathcal{U}$ sia un ricoprimento finito composto da insiemi chiusi e convessi di uno spazio euclideo $X$, il \textit{Teorema del Nervo}\cite{Edelsbrunner} ci garantisce che, il nervo di $\mathcal{U}$ è omotopicamente equivalente a $X$.
+
+% \begin{definition}
+%     Dato un grafo $G = (V,E)$, chiamiamo \textbf{complesso delle cricche} di $G$ il complesso simpliciale i cui vertici sono i vertici di $G$ e i cui $k$-simplessi sono i sottoinsiemi $\sigma = \{x_0, \dots, x_k\} \subseteq V$ tali che ogni coppia di vertici di $\sigma$ è collegata da un arco. Chiamiamo tali $\sigma$ \textbf{cricche} di $G$.
+% \end{definition}
+
+% https://publish.illinois.edu/ymb/files/2020/03/Bjorner_TopMeth.pdf
+% https://webhomes.maths.ed.ac.uk/~v1ranick/papers/edelcomp.pdf
+
+Consideriamo ora $(X,d)$ uno spazio metrico ed $S$ un suo sottoinsieme. In ambito applicativo, $S$ rappresenta tipicamente l'insieme delle misurazioni, e si suppone che sia contenuto in uno spazio metrico $X$ di cui non si conosce la struttura globale.
+
+\subsection*{Complesso di \v{C}ech}
+\begin{definition}
+    Per ogni $\varepsilon > 0$, sia $S_{\varepsilon} = \bigcup_{s \in S} B_{\varepsilon}(s)$, dove $B_{\varepsilon}(s)$ è la palla aperta di raggio $\varepsilon$ centrata in $s$. Il \textbf{complesso di \v{C}ech} $\check{C}_{\varepsilon}(S)$ al parametro $\varepsilon$ associato a $S$ è il nervo del ricoprimento $\{S_{\varepsilon}\}_{\varepsilon > 0}$.
+\end{definition}
+\input{Immagini/cech.tex}
+
+\begin{remark}
+    Nel caso in cui $X$ sia uno spazio euclideo, il Teorema del Nervo ci assicura che il complesso di \v{C}ech mantenga l'omologia di $S$.
+\end{remark}
+
+\begin{remark}
+    $\check{C}_{\varepsilon}(S)$ è molto costoso dal punto di vista computazionale, in quanto bisogna considerare un numero molto alto di intersezioni. Inoltre, il complesso può avere dimensione fino a $|\mathcal{U}|-1$, quindi può avere simplessi di dimensione più grande di quella dello spazio che vorremmo approssimare.
+\end{remark}
+
+\subsection*{Complesso di Vietoris-Rips}
+\begin{definition}
+    Dato un insieme $S \subseteq X$, il \textbf{complesso di Vietoris-Rips} $VR_{\varepsilon}(S)$ al parametro $\varepsilon > 0$ associato a $S$ è il complesso simpliciale i cui vertici sono gli elementi di $S$ e i cui $k$-simplessi sono le collezioni $\{x_0, \ldots, x_k\} \subseteq S$ tali che per ogni coppia di vertici $x_i, x_j \in \{x_0, \ldots, x_k\}$, abbiamo $d(x_i, x_j) \leq \varepsilon$.
+\end{definition}
+
+\begin{remark}
+    Nel caso in cui $X$ sia uno spazio euclideo, possiamo dire che il complesso VR approssima il complesso di \v{C}ech, nel senso che vale $\check{C}_{\varepsilon}(S) \subseteq VR_{\varepsilon}(S) \subseteq \check{C}_{2\varepsilon}(S)$
+\end{remark}
+
+\input{Immagini/Vr_cech.tex}
+
+Consideriamo lo spazio metrico $X=\mathbb{R}^d$.
+
+\begin{definition}[Decomposizione di \textbf{Voronoi}]
+    La \textbf{decomposizione di Voronoi} di $X$ rispetto ad $S$ è il ricoprimento dato dai
+    \begin{align*}
+    V_s = \{x \in \mathbb{R}^d : d(x,s) \leq d(x,s') \text{ per ogni } s' \in S\}
+    \end{align*}
+\end{definition}
+
+\input{Immagini/Voronoi.tex}
+
+\subsection*{Complesso di Delaunay}
+\begin{definition}
+    Chiamiamo \textbf{complesso di Delaunay} $Del(S)$ di $S$ il nervo del ricoprimento dato dalla decomposizione di Voronoi $\{V_s\}_{s \in S}$.
+\end{definition}
+
+\begin{remark}
+    Nel caso in cui i punti di $S$ siano in posizione generale, il complesso di Delaunay di $S$ ha una realizzazione geometrica che consiste nell'inviluppo convesso di $S$. In questo caso, il complesso è anche chiamato \textbf{triangolazione di Delaunay}.
+\end{remark}
+
+\input{Immagini/Delaunay.tex}
+
+\subsection*{Complesso Alpha}
+\begin{definition}[Complesso \textbf{Alpha}]
+    Sia $\varepsilon > 0$, e sia $S_{\varepsilon} = \bigcup_{s \in S} B(s, \varepsilon)$. Il \textbf{complesso alpha} $A_{\varepsilon}(S)$ di $S$ al parametro $\varepsilon$ è il nervo del ricoprimento dato da $\{V_s \cap B(s, \varepsilon)\}_{s \in S}$. 
+\end{definition}
+
+\input{Immagini/Alpha.tex}
+
+\begin{remark}
+    Notiamo che in generale il complesso alpha è un sottocomplesso del complesso di Delaunay, in particolare $A_{\infty}(S)$ è proprio il complesso di Delaunay di $S$.
+    Inoltre, $A_{\varepsilon}(S)$ è molto simile al complesso di \v{C}ech, ma , se i punti di $S$ sono in posizione generale, la dimensione massima dei suoi simplessi è minore o uguale a quella dello spazio.
+\end{remark}
+
+\subsection*{Complessi Witness}
+Nel caso di dataset molto grandi, la costruzione dei complessi può diventare computazionalmente costosa. Perciò una classe di complessi molto utile è quella dei \textit{complessi witness}.
+
+Prendiamo $(S,d)$ uno spazio metrico, i cui punti chiameremo \textbf{witness}, e $L \subseteq S$ un suo sottoinsieme, che chiameremo insieme dei \textbf{landmark}.
+
+\begin{definition}[Complesso \textbf{Witness Debole}]
+    Diciamo che $s \in S$ è un \textbf{witness debole} per $\sigma \subseteq L$ se per ogni $x \in \sigma$, e per ogni $y \in L \setminus \sigma$ vale $d(s,x) \leq d(s,y)$. Il \textbf{complesso witness debole} $W(S,L)$ di $S$ rispetto a $L$ ha come vertici i punti di $L$ e come simplessi i $\sigma$ che hanno un witness debole in $S$.
+\end{definition}
+
+\begin{definition}[Complesso \textbf{Witness Forte}]
+    Diciamo invece che $s \in S$ è un \textbf{witness forte} per $\sigma \subseteq L$ se per ogni $x \in \sigma$, e per ogni $y \in L$ vale $d(s,x) \leq d(s,y)$. E definiamo il \textbf{complesso witness forte} $W^+(S,L)$ di $S$ rispetto a $L$ allo stesso modo del complesso witness debole, ma considerando i witness forti.
+\end{definition}
+
+% \input{Immagini/Witness.tex}
+
+Possiamo estendere le definizioni di witness a quelle di \textit{$\alpha$-witness} per ottenere complessi annidati.
+
+\begin{definition}[Complessi Witness \textbf{Rilassati}]
+    Diciamo che $s \in S$ è un \textbf{$\alpha$-witness debole} (rispettivamente \textbf{forte}) per $\sigma \subseteq L$ se per ogni $x \in \sigma$, e per ogni $y \in L \setminus \sigma$ (rispettivamente $y \in L$) vale $d(s,x)^2 \leq d(s,y)^2 + \alpha^2$. Definiamo il \textbf{complesso witness rilassato debole} (\textbf{forte}) $W_{\alpha}^{(+)}(S,L)$ di $S$ rispetto a $L$ come il complesso che ha come vertici gli elementi di $L$ e come simplessi i $\sigma$ che hanno un $\alpha$-witness debole (forte) in $S$.
+\end{definition}
+
+\begin{remark}
+    Per $\alpha = 0$ abbiamo che $W_{0}(S,L)$ coincide con il complesso witness debole $W(S,L)$; invece, il complesso forte $W^+_0(S,L)$ consiste di soli punti. Perciò, per $\alpha$ piccoli conviene utilizzare il complesso debole. Spesso però bisogna utilizzare $\alpha$ grandi per calcolare l'omologia, in tal caso è meglio utilizzare il complesso forte, che è più veloce computazionalmente.
+\end{remark}
+
+\section{Sperimentazione}
+In questa sezione viene descritta la pipeline sperimentale implementata per analizzare e confrontare le diverse costruzioni di complessi simpliciali introdotte nel Capitolo 4. L'obiettivo è duplice: primo, valutare le prestazioni computazionali (tempo di esecuzione e memoria) di ciascun metodo; secondo, confrontare le proprietà topologiche catturate da ciascun complesso attraverso l'omologia persistente.
+
+L'intero processo è stato automatizzato tramite script Python, sfruttando la libreria GUDHI per le costruzioni topologiche e i calcoli di persistenza.
+
+La sperimentazione è stata strutturata in quattro fasi principali, a partire dalla ricostruzione del modello \textit{Dragon} ottenuto da \cite{StanfordRepository}.
+
+\subsection{Estrazione dei Campioni}
+Sono stati estratti $7$ campioni dal modello \textit{Dragon}, utilizzando il software MeshLab. Tramite \textit{clustered vertex sampling} sono stati selezionati dei gruppi di vertici in modo da mantenere la struttura topologica del modello originale. I campioni estratti hanno dimensioni variabili, da un minimo di $500$ punti a un massimo di $4000$ punti, come riportato in Tabella \ref{tab:campioni}.
+
+\begin{table}[!ht]
+    \centering
+    \begin{tabular}{|c|c|}
+        \hline
+        \textbf{Campione} & \textbf{Numero di punti} \\
+        \hline
+        1 & 500 \\
+        2 & 1000 \\
+        3 & 1501 \\
+        4 & 2000 \\
+        5 & 3002 \\
+        6 & 3476 \\
+        7 & 4000 \\
+        \hline
+    \end{tabular}
+    \caption{Dimensioni dei campioni estratti dal modello \textit{Dragon}}
+    \label{tab:campioni}
+\end{table}
+
+\subsection{Generazione dei Complessi}
+Per ognuno dei campioni sono stati costruiti i seguenti compessi simpliciali:
+\begin{itemize}
+    \item Vietoris-Rips
+    \item \v{C}ech
+    % (con \verb|gudhi.DelaunayCechComplex(point_cloud[, alpha])|)
+    \item Alpha
+    \item Witness
+\end{itemize}
+
+Un aspetto cruciale della costruzione è stata la stima dei parametri di filtrazione, infatti ognuno dei complessi richiede un parametro \verb|max_edge_length| o \verb|max_alpha_square| che determina il valore massimo del parametro di filtrazione. A questo scopo è stato adottato un approccio adattivo basato sull'algoritmo del \textit{$k$-nearest-neighbor}.
+
+I complessi \v{C}ech e Alpha sono stati costruiti in due varianti ciascuno, una con il parametro di filtrazione calcolato come descritto sopra, e una con il parametro fissato a $+\infty$ (Delaunay Cech, Delaunay Alpha), in quanto nel secondo caso entrambi coincidono con il complesso di Delaunay ma con parametri di filtrazione diversi.
+
+Il complesso Witness è stato invece costruito in tre varianti: debole (Witness), debole rilassato (Relaxed Witness) e forte rilassato (Strong Witness).
+
+Possiamo vedere le diverse rappresentazioni dei complessi costruiti su uno stesso campione (in questo caso il più grande) nelle Figure \ref{fig:complex_visualizations1} e \ref{fig:complex_visualizations2} nell'Appendice.
+
+\subsection{Analisi delle Prestazioni}
+Durante la fase di costruzione, sono state misurate sistematicamente le prestazioni di ciascun algoritmo. In particolare, per ogni coppia (campione, tipo di complesso) sono stati registrati:
+\begin{itemize}
+    \item \textbf{Tempo di elaborazione (s)}: il tempo totale impiegato per costruire il complesso simpliciale e calcolare la persistenza.
+    \item \textbf{Memoria utilizzata (MB)}: la quantità di memoria RAM utilizzata durante la costruzione del complesso e il calcolo della persistenza.
+\end{itemize}
+Questi dati sono stati raccolti e presentati nelle tabelle in Figura \ref{fig:performance_tables}, permettendo una valutazione oggettiva dell'efficienza di ciascuna costruzione.
+
+\begin{figure}[!ht]
+    \centering
+    \begin{minipage}{0.6\textwidth}
+        \includegraphics[width=\textwidth]{Immagini/memory_table.png}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.6\textwidth}
+        \includegraphics[width=\textwidth]{Immagini/time_table.png}
+    \end{minipage}
+    \caption{Tabelle comparative delle prestazioni}
+    \label{fig:performance_tables}
+\end{figure}
+
+\'E evidente dalle tabelle che il complesso di Vietoris-Rips è il più costoso in termini di tempo e memoria, specialmente per campioni di grandi dimensioni. Al contrario, i complessi Witness, soprattutto nella variante forte rilassata, si sono dimostrati molto più efficienti, il che li rende adatti all'analisi di dataset estesi.
+
+\subsection{Confronti}
+Il confronto qualitativo tra i complessi è stato effettuato analizzando i loro diagrammi di persistenza tramite la distanza bottleneck con il seguente processo:
+\begin{itemize}
+    \item Correzione dell'Infinito: Le feature topologiche che "vivono per sempre" (con morte a $+\infty$) pongono un problema nel calcolo di distanze finite. Per ovviare a ciò, i punti all'infinito nei diagrammi di persistenza sono stati sostituiti con un valore finito, ma sufficientemente grande, derivato dal massimo valore di filtrazione osservato in tutti i complessi. Questo passaggio è fondamentale per rendere le distanze confrontabili.
+    \item Calcolo delle Matrici di Distanza: Per ogni dimensione omologica ($0$, $1$, $2$), è stata calcolata una matrice contenente le distanze bottleneck tra ogni coppia di complessi.
+    \item Visualizzazione con Multidimensional Scaling (MDS): Per interpretare visivamente le matrici di distanza, è stato utilizzato l'MDS. Questa tecnica proietta i complessi su un piano cartesiano in modo che la distanza euclidea tra i punti rispecchi la distanza bottleneck tra i complessi. Il risultato è un grafico in cui complessi topologicamente simili appaiono vicini, mentre quelli dissimili sono lontani. Questo viene fatto separatamente per ogni dimensione omologica, per capire quali feature sono catturate in modo più o meno simile dai diversi metodi.
+\end{itemize}
+
+I risultati di questi confronti sono riportati nella Figura \ref{fig:complex_bottleneck} nell'Appendice, dove si può osservere il comportamento dei complessi al variare del numero di punti del campione. In particolare notiamo che in dimensione $0$ la distanza tende a diminuire all'aumenare del numero dei punti, segno che tutti i complessi catturano in modo simile le componenti connesse del campione. In dimensione $1$ e $2$ invece la situazione è più variegata, con alcuni complessi che si avvicinano tra loro e altri che rimangono distanti.
+
+Notiamo in particolare che i complessi Witness deboli non rilassati danno distanza $0$ tra tutti in tutte le dimensioni, questo è dovuto al fatto che questo complesso ha pochissimi simplessi a prescindere dal numero di vertici e quindi i diagrammi di persistenza risultano molto simili con sole feature con morte a $+\infty$.
+
+Osserviamo inoltre che i complessi di Delaunay costruiti in entrambi i modi (Delaunay Cech e Delaunay Alpha) sono quelli che più mostrano della convergenza in tutte le dimensioni.
+
+\subsection{Analisi della Convergenza}
+Infine, è stata studiata la stabilità e la convergenza di ciascun tipo di complesso all'aumentare della densità del campionamento. L'idea è che, man mano che la nuvola di punti diventa un campione migliore dello spazio sottostante, l'omologia calcolata dovrebbe stabilizzarsi. Questo è stato verificato calcolando la distanza bottleneck tra complessi dello stesso tipo, ma costruiti su campioni consecutivi (es. tra il campione da $500$ punti e quello da $1000$ punti). Ci si aspetta che un complesso robusto mostri una distanza bottleneck che tende a zero all'aumentare del numero di punti, indicando che la sua struttura topologica si sta stabilizzando. I risultati di questa analisi sono riportati nella seguente Figura.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Immagini/convergence.png}
+    \label{fig:convergence_analysis}
+\end{figure}
+
+Possiamo notare che in dimensione $0$ e $2$ c'è effettivamente una convergenza a $0$, ma non si può dire lo stesso della dimensione $1$, dove gli andamenti sembrano più irregolari.
+Vediamo sempre che il complesso Witness debole non rilassato dà distanza $0$ tra tutti in tutte le dimensioni, per lo stesso motivo descritto sopra.
+Osserviamo infine che i complessi Delaunay Cech e Delaunay Alpha, così come Cech e Alpha, risultano sovrapposti, il che è coerente col fatto che siano costruzioni equivalenti del complesso di Delaunay.
+\bibliographystyle{siam} \bibliography{biblio}
+
+\section*{Appendice}
+\begin{figure}[H]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Immagini/alpha_plotly-crop.png}
+        \caption*{Complesso Alpha}
+        \label{fig:alpha}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Immagini/cech_plotly-crop.png}
+        \caption*{Complesso \v{C}ech}
+        \label{fig:cech}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Immagini/del_cech_plotly-crop.png}
+        \caption*{Complesso Delaunay \v{C}ech}
+        \label{fig:del_cech}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Immagini/del_alpha_plotly-crop.png}
+        \caption*{Complesso Delaunay Alpha}
+        \label{fig:del_alpha}
+    \end{minipage}
+    \caption{Visualizzazioni di complessi costruiti sul campione da $4000$ punti}
+    \label{fig:complex_visualizations1}
+\end{figure}
+
+\begin{figure}[H]
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Immagini/rips_plotly-crop.png}
+        \caption*{Complesso Vietoris-Rips}
+        \label{fig:rips}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Immagini/witness_plotly-crop.png}
+        \caption*{Complesso Witness}
+        \label{fig:witness}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Immagini/rel_witness_plotly-crop.png}
+        \caption*{Complesso Witness Rilassato}
+        \label{fig:rel_witness}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Immagini/str_witness_plotly-crop.png}
+        \caption*{Complesso Witness Forte}
+        \label{fig:str_witness}
+    \end{minipage}
+    \caption{Visualizzazioni di complessi costruiti sul campione da $4000$ punti}
+    \label{fig:complex_visualizations2}
+\end{figure}
+
+% \begin{figure}[H]
+%     \centering
+%     \caption{Confronti delle distanze bottleneck tra complessi diversi calcolati sullo stesso campione}\label{fig:sample_bottleneck}
+%     \includegraphics[width=\textwidth]{Immagini/500_bottleneck.png}\\
+%     \includegraphics[width=\textwidth]{Immagini/1000_bottleneck.png}\\
+%     \includegraphics[width=\textwidth]{Immagini/1501_bottleneck.png}\\
+%     \includegraphics[width=\textwidth]{Immagini/2000_bottleneck.png}
+% \end{figure}
+% \begin{figure}[H]
+%     \includegraphics[width=\textwidth]{Immagini/3002_bottleneck.png}\\
+%     \includegraphics[width=\textwidth]{Immagini/3476_bottleneck.png}\\
+%     \includegraphics[width=\textwidth]{Immagini/4000_bottleneck.png}
+% \end{figure}
+
+\begin{figure}[H]
+    \centering
+    \caption{Confronti delle distanze bottleneck tra lo stesso complesso calcolato su tutti i campioni}\label{fig:complex_bottleneck}
+    \includegraphics[width=\textwidth]{Immagini/rips_bottleneck.png}\\
+    \includegraphics[width=\textwidth]{Immagini/cech_bottleneck.png}\\
+    \includegraphics[width=\textwidth]{Immagini/alpha_bottleneck.png}\\
+    \includegraphics[width=\textwidth]{Immagini/del_cech_bottleneck.png}
+\end{figure}
+\begin{figure}[H]
+    \includegraphics[width=\textwidth]{Immagini/del_alpha_bottleneck.png}\\
+    \includegraphics[width=\textwidth]{Immagini/witness_bottleneck.png}\\
+    \includegraphics[width=\textwidth]{Immagini/rel_witness_bottleneck.png}\\
+    \includegraphics[width=\textwidth]{Immagini/str_witness_bottleneck.png}
+\end{figure}
+
+% \newgeometry{top=1cm, bottom=1cm, left=1.2in, right=1.3in}
+% \begin{figure}[!h]
+%     \centering
+%     \begin{minipage}{0.48\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{Immagini/rips_plotly-crop.png}
+%         \caption*{Complesso Vietoris-Rips}
+%         \label{fig:rips}
+%     \end{minipage}
+%     \hfill
+%     \begin{minipage}{0.48\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{Immagini/alpha_plotly-crop.png}
+%         \caption*{Complesso Alpha}
+%         \label{fig:alpha}
+%     \end{minipage}
+%     \hfill
+%     \begin{minipage}{0.48\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{Immagini/cech_plotly-crop.png}
+%         \caption*{Complesso \v{C}ech}
+%         \label{fig:cech}
+%     \end{minipage}
+%     \hfill
+%     \begin{minipage}{0.48\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{Immagini/del_cech_plotly-crop.png}
+%         \caption*{Complesso Delaunay \v{C}ech}
+%         \label{fig:del_cech}
+%     \end{minipage}
+%     \hfill
+%     \begin{minipage}{0.48\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{Immagini/del_alpha_plotly-crop.png}
+%         \caption*{Complesso Delaunay Alpha}
+%         \label{fig:del_alpha}
+%     \end{minipage}
+%     \hfill
+%     \begin{minipage}{0.48\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{Immagini/witness_plotly-crop.png}
+%         \caption*{Complesso Witness}
+%         \label{fig:witness}
+%     \end{minipage}
+%     \hfill
+%     \begin{minipage}{0.48\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{Immagini/rel_witness_plotly-crop.png}
+%         \caption*{Complesso Witness Rilassato}
+%         \label{fig:rel_witness}
+%     \end{minipage}
+%     \hfill
+%     \begin{minipage}{0.48\textwidth}
+%         \centering
+%         \includegraphics[width=\textwidth]{Immagini/str_witness_plotly-crop.png}
+%         \caption*{Complesso Witness Forte}
+%         \label{fig:str_witness}
+%     \end{minipage}
+% \end{figure}
+% \restoregeometry
+% \newpage
+% \ 
 \end{document}

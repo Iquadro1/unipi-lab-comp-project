@@ -1,0 +1,159 @@
+\def\biglen{20cm} % playing role of infinity (should be < .25\maxdimen)
+
+\def\maxxy{3.3} % random points are in [-\maxxy,\maxxy]x[-\maxxy,\maxxy]
+
+\begin{figure}[!ht]
+    \centering
+    \begin{subfigure}{.3\textwidth}
+        \begin{tikzpicture}[scale=0.7]
+        % \begin{scope}
+            \def\radius{0.65}
+            \def\pts{
+                (-1.1483,1.74945),
+                (0.8,-0.2),
+                (1.5,-0.79076),
+                (0.87991,-1.14056),
+                (-0.9,-0.9)
+            }
+            % draw the points and their cells
+            \xintForpair #1#2 in \pts \do{
+                \edef\pta{#1,#2}
+                \begin{scope}
+                    \clip (\pta) circle (\radius);
+                    \xintForpair \#3#4 in \pts \do{
+                        \edef\ptb{#3,#4}
+                        \ifx\pta\ptb\relax % check if (#1,#2) == (#3,#4) ?
+                        \tikzset{myclip/.style={}}
+                        \else
+                        \tikzset{myclip/.style={clip}}
+                        \fi
+                        \path[myclip] (#3,#4) to[half plane] (#1,#2);
+                    }
+                    % \clip (-\maxxy,-\maxxy) rectangle (\maxxy,\maxxy); % last clip
+                    % \pgfmathsetmacro{\randhue}{rnd}
+                    % \definecolor{randcolor}{hsb}{\randhue,.5,1}
+                    \fill[lightgray] (#1,#2) circle (\radius);
+                    \node[dot, very thick] at (#1,#2) {}; % and draw the point
+                \end{scope}
+            }
+            \coordinate (p1) at (-1.1483,1.74945);
+            \coordinate (p3) at (1.5,-0.79076);
+            \coordinate (p5) at (-0.9,-0.9);
+            \coordinate (p4) at (0.87991,-1.14056);
+            \coordinate (p2) at (0.8,-0.2);
+        
+            \fill[darkgray, opacity=0.3] (p2) -- (p3) -- (p4) -- cycle;
+        
+            \draw[thick] (p2) -- (p3) -- (p4) -- cycle;
+        
+            % \pgfresetboundingbox
+            % \draw[opacity=0] (-\maxxy,-\maxxy) rectangle (\maxxy,\maxxy);
+        % \end{scope}
+        \end{tikzpicture}
+        \subcaption*{$A_{1}$}
+    \end{subfigure}\hfill
+    \begin{subfigure}{.3\textwidth}
+    \begin{tikzpicture}[scale=0.7]
+    % \begin{scope}[xshift=7cm]
+        \def\radius{0.89}
+        \def\pts{
+            (-1.1483,1.74945),
+            (0.8,-0.2),
+            (1.5,-0.79076),
+            (0.87991,-1.14056),
+            (-0.9,-0.9)
+        }
+        % draw the points and their cells
+        \xintForpair #1#2 in \pts \do{
+            \edef\pta{#1,#2}
+            \begin{scope}
+                \clip (\pta) circle (\radius);
+                \xintForpair \#3#4 in \pts \do{
+                    \edef\ptb{#3,#4}
+                    \ifx\pta\ptb\relax % check if (#1,#2) == (#3,#4) ?
+                    \tikzset{myclip/.style={}}
+                    \else
+                    \tikzset{myclip/.style={clip}}
+                    \fi
+                    \path[myclip] (#3,#4) to[half plane] (#1,#2);
+                }
+                % \clip (-\maxxy,-\maxxy) rectangle (\maxxy,\maxxy); % last clip
+                % \pgfmathsetmacro{\randhue}{rnd}
+                % \definecolor{randcolor}{hsb}{\randhue,.5,1}
+                \fill[lightgray] (#1,#2) circle (\radius); % fill the cell with random color
+                \node[dot, very thick] at (#1,#2) {}; % and draw the point
+            \end{scope}
+        }
+        \coordinate (p1) at (-1.1483,1.74945);
+        \coordinate (p3) at (1.5,-0.79076);
+        \coordinate (p5) at (-0.9,-0.9);
+        \coordinate (p4) at (0.87991,-1.14056);
+        \coordinate (p2) at (0.8,-0.2);
+
+        \fill[darkgray, opacity=0.3] (p2) -- (p3) -- (p4) -- cycle;
+
+        \draw[thick] (p2) -- (p3) -- (p4) -- cycle;
+        \draw[thick] (p4) -- (p5) -- (p2);
+
+        % \pgfresetboundingbox
+        % \draw[opacity=0] (-\maxxy,-\maxxy) rectangle (\maxxy,\maxxy);
+    % \end{scope}
+    \end{tikzpicture}
+    \subcaption*{$A_{1.5}$}
+    \end{subfigure}\hfill
+    \begin{subfigure}{.3\textwidth}
+    \begin{tikzpicture}[scale=0.7]
+    % \begin{scope}[xshift=14cm]
+        \def\radius{1.4}
+        \def\pts{
+            (-1.1483,1.74945),
+            (0.8,-0.2),
+            (1.5,-0.79076),
+            (0.87991,-1.14056),
+            (-0.9,-0.9)
+        }
+        % draw the points and their cells
+        \xintForpair #1#2 in \pts \do{
+            \edef\pta{#1,#2}
+            \begin{scope}
+                \clip (\pta) circle (\radius);
+                \xintForpair \#3#4 in \pts \do{
+                    \edef\ptb{#3,#4}
+                    \ifx\pta\ptb\relax % check if (#1,#2) == (#3,#4) ?
+                    \tikzset{myclip/.style={}}
+                    \else
+                    \tikzset{myclip/.style={clip}}
+                    \fi
+                    \path[myclip] (#3,#4) to[half plane] (#1,#2);
+                }
+                % \clip (-\maxxy,-\maxxy) rectangle (\maxxy,\maxxy); % last clip
+                % \pgfmathsetmacro{\randhue}{rnd}
+                % \definecolor{randcolor}{hsb}{\randhue,.5,1}
+                \fill[lightgray] (#1,#2) circle (\radius); % fill the cell with random color
+                \node[dot, very thick] at (#1,#2) {}; % and draw the point
+            \end{scope}
+        }
+        \coordinate (p1) at (-1.1483,1.74945);
+        \coordinate (p3) at (1.5,-0.79076);
+        \coordinate (p5) at (-0.9,-0.9);
+        \coordinate (p4) at (0.87991,-1.14056);
+        \coordinate (p2) at (0.8,-0.2);
+
+        \fill[darkgray, opacity=0.3] (p2) -- (p3) -- (p4) -- cycle;
+        \fill[darkgray, opacity=0.3] (p2) -- (p4) -- (p5) -- cycle;
+        \fill[darkgray, opacity=0.3] (p1) -- (p2) -- (p5) -- cycle;
+
+        \draw[thick] (p2) -- (p3) -- (p4) -- cycle;
+        \draw[thick] (p4) -- (p5) -- (p2);
+        \draw[thick] (p1) -- (p2) -- (p5) -- cycle;
+
+        % \pgfresetboundingbox
+        % \draw[opacity=0] (-\maxxy,-\maxxy) rectangle (\maxxy,\maxxy);
+    % \end{scope}
+    \end{tikzpicture}
+    \subcaption*{$A_{2}$}
+    \end{subfigure}
+
+    % \end{tikzpicture}
+    \caption{\centering Esempio di complesso Alpha con decomposizione di Voronoi}
+\end{figure}

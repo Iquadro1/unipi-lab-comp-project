@@ -1,0 +1,77 @@
+% --- Start of Figure Code ---
+% Using \makebox to center the content and ensure it fits within the line width.
+\makebox[\linewidth][c]{
+{
+% Use a single-row tabular with adjusted spacing
+\begin{tabular}{c@{\hspace{0.4em}}c@{\hspace{0.4em}}c@{\hspace{0.4em}}c@{\hspace{0.4em}}c@{\hspace{0.4em}}c@{\hspace{0.4em}}c}
+
+% --- Panel 0: F_0 K ---
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+  % Increased coordinates for a bigger drawing
+  \coordinate (a) at (0, 1.3);
+  \coordinate (b) at (1.3, 1.3);
+  \coordinate (c) at (0, 0);
+  \node[dot, label=above left:a] at (a) {};
+  \node[dot, label=above right:b] at (b) {};
+  \node[dot, label=below left:c] at (c) {};
+  \node[panel_label] at (0.65, -0.5) {$F_0 K$};
+\end{tikzpicture}
+&
+% Arrow 1
+$\xhookrightarrow[\rule{20pt}{0pt}]{g_{0,1}}$
+&
+% --- Panel 1: F_1 K ---
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+  \coordinate (a) at (0, 1.3);
+  \coordinate (b) at (1.3, 1.3);
+  \coordinate (c) at (0, 0);
+  \coordinate (d) at (1.3, 0);
+  \draw[thick] (a) -- (b) -- (c) -- (a);
+  \node[gray_dot, label=above left:a] at (a) {};
+  \node[gray_dot, label=above right:b] at (b) {};
+  \node[gray_dot, label=below left:c] at (c) {};
+  \node[dot, label=below right:d] at (d) {};
+  \node[panel_label] at (0.65, -0.5) {$F_1 K$};
+\end{tikzpicture}
+&
+% Arrow 2
+$\xhookrightarrow[\rule{20pt}{0pt}]{g_{1,2}}$
+&
+% --- Panel 2: F_2 K ---
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+  \coordinate (a) at (0, 1.3);
+  \coordinate (b) at (1.3, 1.3);
+  \coordinate (c) at (0, 0);
+  \coordinate (d) at (1.3, 0);
+  \draw[gray, thick] (a) -- (b) -- (c) -- (a);
+  \draw[thick] (b) -- (d) -- (c);
+  \node[gray_dot, label=above left:a] at (a) {};
+  \node[gray_dot, label=above right:b] at (b) {};
+  \node[gray_dot, label=below right:d] at (d) {};
+  \node[gray_dot, label=below left:c] at (c) {};
+  \node[panel_label] at (0.65, -0.5) {$F_2 K$};
+\end{tikzpicture}
+&
+% Arrow 3
+$\xhookrightarrow[\rule{20pt}{0pt}]{g_{2,3}}$
+&
+% --- Panel 3: F_3 K = K ---
+\begin{tikzpicture}[baseline=(current bounding box.center)]
+  \coordinate (a) at (0, 1.3);
+  \coordinate (b) at (1.3, 1.3);
+  \coordinate (c) at (0, 0);
+  \coordinate (d) at (1.3, 0);
+  \fill[black] (b) -- (c) -- (d) -- cycle;
+  \draw[gray, thick] (a) -- (b) -- (c) -- (a);
+  \draw[gray, thick] (b) -- (d) -- (c);
+  \node[gray_dot, label=above left:a] at (a) {};
+  \node[gray_dot, label=above right:b] at (b) {};
+  \node[gray_dot, label=below left:c] at (c) {};
+  \node[gray_dot, label=below right:d] at (d) {};
+  \node[panel_label] at (0.65, -0.5) {$F_3 K = K$};
+\end{tikzpicture}
+
+\end{tabular}
+} % End of the group
+} % End of the \makebox
+% --- End of Figure Code ---

@@ -1,0 +1,47 @@
+        \begin{tikzpicture}[
+    ]
+        % --- Top Row (with smaller line) ---
+        \begin{scope}[yshift=1.7cm]
+            % Diagram: line segment of length 1.5
+            \coordinate (v0) at (0,0);
+            \coordinate (v1) at (1.5,0);
+            
+            % Draw line with arrow
+            \draw[midarrow] (v0) -- (v1);
+            
+            % Place vertices and labels
+            \node[dot, label=left:$v_0$] at (v0) {};
+            \node[dot, label=right:$v_1$] at (v1) {};
+            
+            % Equation for the top diagram
+            \node[anchor=west] at (2.5, 0) {$\partial_1(v_0, v_1) = (v_1) - (v_0)$};
+        \end{scope}
+
+        % --- Bottom Row (with smaller, centered arrow) ---
+        \begin{scope}
+            % Diagram: smaller triangle with base 1.5
+            \coordinate (v0) at (0,0);
+            \coordinate (v1) at (1.5,0);
+            \coordinate (v2) at (0.75, 1);
+            
+            \fill[gray] (v0) -- (v1) -- (v2) -- cycle;
+
+            % Draw edges with arrows
+            \draw[midarrow] (v0) -- (v1);
+            \draw[midarrow] (v1) -- (v2);
+            \draw[midarrow] (v2) -- (v0);
+            
+            % Place vertices and labels
+            \node[dot, label=below:$v_0$] at (v0) {};
+            \node[dot, label=below:$v_1$] at (v1) {};
+            \node[dot, label=above:$v_2$] at (v2) {};
+            
+            % Draw the smaller, centered circular arrow inside the triangle
+            % Center is at (0.75, 0.433), which is the triangle's centroid. Radius is reduced to 0.2.
+            \draw[-{Latex[length=1mm]}, semithick] (0.62, 0.433) arc (150:-150:0.15); %<-- CHANGED
+
+            % Equation for the bottom diagram
+            \node[anchor=west] at (2.5, 0.65) {$\partial_2(v_0, v_1, v_2) = (v_1, v_2) - (v_0, v_2) + (v_0, v_1)$};
+        \end{scope}
+        
+    \end{tikzpicture}
